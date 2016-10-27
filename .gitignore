@@ -1,0 +1,7 @@
+# Python files
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints
+
+# matlab autosave
+*.asv
