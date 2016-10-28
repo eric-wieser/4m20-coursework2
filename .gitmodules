@@ -1,0 +1,6 @@
+[submodule "matlab/cobs"]
+	path = matlab/cobs
+	url = https://github.com/phyrwork/cobs-matlab.git
+[submodule "arduino/PacketSerial"]
+	path = arduino/PacketSerial
+	url = https://github.com/bakercp/PacketSerial.git
