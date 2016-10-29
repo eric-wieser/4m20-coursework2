@@ -1,34 +1,59 @@
 #include "Robot.h"
 
-void sendReadings(Robot robot) {
-  // print out the angle readings
-  for(int i = 0; i < robot.N; i++) {
-    if(i != 0) Serial.print('\t');
-    Serial.print(robot.joints[i].read());
-  }
-  Serial.print('\n');
-}
+#include "PacketSerial/src/PacketSerial.h"
 
-void updateAngles(Robot robot) {
-  // control the servos
-  for(int i = 0; i < robot.N; i++)
-    robot.joints[i].write(90);
-}
+#include "messages.h"
 
-void setup() {
+PacketSerial packet_serial;
+Robot *robot;
+
+void setupRobot() {
   // Define where the pins are connected
-  Robot robot = {
+  static Robot r = {
     Joint(3, 0),
     Joint(5, 1),
     Joint(6, 2),
   };
+  robot = &r;
+}
+
+void sendReadings() {
+  messages::Framed<messages::Sensor> frame;
+
+  // fill the message
+  for(int i = 0; i < robot->N; i++) {
+    frame.msg.adcs[i] = robot->joints[i].read();
+  }
+
+  messages::send(frame, packet_serial);
+}
+
+
+void onPacket(const uint8_t* buffer, size_t size) {
+  if(auto m = message_cast<const messages::Control*>(buffer, size)) {
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].write(m->micros[i]);
+    }
+  }
+  else {
+    // bad message type
+  }
+}
+
+void setup() {
+  setupRobot();
+
+  for(int i = 0; i < robot->N; i++) {
+    robot->joints[i].write(1500);
+  }
 
   // set up the serial connection
-  Serial.begin(115200);
+  packet_serial.begin(115200);
+  packet_serial.setPacketHandler(onPacket);
 
   while(1) {
-    sendReadings(robot);
-    updateAngles(robot);
+    sendReadings();
+    packet_serial.update();
 
     // the cost of not using loop()
     if (serialEventRun) serialEventRun();

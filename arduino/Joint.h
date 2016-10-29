@@ -9,11 +9,11 @@ private:
   Servo servo_;
 public:
   Joint(uint8_t servoPin, uint8_t adcPin) : encoderPin_(adcPin) {
-    servo_.attach(servoPin, 700, 2300);
+    servo_.attach(servoPin);
   }
 
-  void write(int angle) {
-    servo_.write(angle);
+  void write(int period) {
+    servo_.writeMicroseconds(period);
   }
 
   int read() const {
