@@ -38,6 +38,8 @@ class SliderGui:
             scale.pack(fill=tk.BOTH)
             self._pot_sliders.append(scale)
 
+        self._on_servo_changed = lambda values: None
+
     def _servo_changed(self, val, i):
         """ called when a single slider value changes"""
         self._servo_values[i] = int(val)
@@ -54,7 +56,13 @@ class SliderGui:
         self._root.after(10, lambda: self._update_ui(pot_readings))
 
     # replace this with a function to call with all the servo values
-    on_servo_changed = lambda values: None
+    @property
+    def on_servo_changed(self):
+        return self._on_servo_changed
+    @on_servo_changed.setter
+    def on_servo_changed(self, callback):
+        self._on_servo_changed = callback
+        callback(self._servo_values)
 
 
 if __name__ == '__main__':
@@ -91,3 +99,5 @@ if __name__ == '__main__':
         gui._root.after(0, update_it)
 
         gui._root.mainloop()
+
+        c.write(messages.Control((0xFFFF,)*config.N))
