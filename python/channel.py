@@ -6,6 +6,9 @@ from queue import Queue
 from threading import Lock, Thread
 import select
 
+class NoMessage(ValueError):
+    pass
+
 class Channel:
     """
     A channel for sending Message objects.
@@ -51,7 +54,11 @@ class Channel:
 
     def read(self, timeout=None, block=False):
         """ wait for a message to arrive """
-        encoded = self._packets.get(timeout=timeout, block=block)
+        try:
+            encoded = self._packets.get(timeout=timeout, block=block)
+        except Empty as e:
+            raise NoMessage from e
+
         raw = cobs.decode(encoded)
         return messages.Message.deserialize(raw)
 
