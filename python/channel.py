@@ -2,7 +2,7 @@ import serial
 from cobs import cobs
 import messages
 
-from queue import Queue
+from queue import Queue, Empty
 from threading import Lock, Thread
 import select
 
@@ -44,7 +44,6 @@ class Channel:
                 *packets, buffer = buffer.split(b'\x00')
                 for p in packets:
                     self._packets.put(p)
-                    self.on_message()
 
     def write(self, message: messages.Message):
         """ Write a message to the channel """
@@ -61,8 +60,6 @@ class Channel:
 
         raw = cobs.decode(encoded)
         return messages.Message.deserialize(raw)
-
-    on_message = lambda x: None
 
 
 if __name__ == '__main__':

@@ -58,26 +58,36 @@ class SliderGui:
 
 
 if __name__ == '__main__':
-    from channel import Channel
+    from channel import Channel, NoMessage
     import messages
 
     # Run a simple test of sending a packet, and getting some responses
     with Channel('COM4') as c:
-        s = SliderGui(start=[c[0] for c in config.servo_0_90])
+        gui = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):
             c.write(messages.Control(v))
-            print(v)
-        s.on_servo_changed = send_it
+        gui.on_servo_changed = send_it
 
         def update_it():
-            try:
-                m = c.read()
-            except:
-                return
+            sensor_m = None
+            while True:
+                try:
+                    m = c.read(timeout=0)
+                except NoMessage:
+                    break
+                except Exception as e:
+                    print(e)
+                    continue
 
-            if isinstance(m, messages.Sensor):
-                s.update_ui(m)
-        c.on_message = update_it
+                if isinstance(m, messages.Sensor):
+                    sensor_m = m
 
-        tk.mainloop()
+            if sensor_m:
+                gui.update_ui(sensor_m)
+
+            gui._root.after(10, update_it)
+
+        gui._root.after(0, update_it)
+
+        gui._root.mainloop()
