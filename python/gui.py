@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import config
+import time
 
 class SliderGui:
     """
@@ -71,6 +72,7 @@ if __name__ == '__main__':
 
     # Run a simple test of sending a packet, and getting some responses
     with Channel('COM4') as c:
+        time.sleep(0.25)
         gui = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):

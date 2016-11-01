@@ -25,6 +25,8 @@ class Channel:
     def __enter__(self):
         self._conn.__enter__()
         self._running = True
+        # this tries to clear any garbage, so that the first message goes through
+        self._conn.write(b'\x00'*16)
         self._backgroundThread.start()
         return self
 
