@@ -5,15 +5,26 @@
 // class for a single joint, that can read the angle and control the servo
 class Joint {
 private:
+  uint8_t servoPin_;
   uint8_t encoderPin_;
+  bool enabled_;
   Servo servo_;
 public:
-  Joint(uint8_t servoPin, uint8_t adcPin) : encoderPin_(adcPin) {
-    servo_.attach(servoPin);
+  Joint(uint8_t servoPin, uint8_t adcPin) : encoderPin_(adcPin), servoPin_(servoPin), enabled_(false) {
   }
 
   void write(int period) {
-    servo_.writeMicroseconds(period);
+    if(period == -1) {
+      servo_.detach();
+      enabled_ = false;
+    }
+    else {
+      if(!enabled_) {
+        servo_.attach(servoPin_);
+        enabled_ = true;
+      }
+      servo_.writeMicroseconds(period);
+    }
   }
 
   int read() const {

@@ -43,10 +43,6 @@ void onPacket(const uint8_t* buffer, size_t size) {
 void setup() {
   setupRobot();
 
-  for(int i = 0; i < robot->N; i++) {
-    robot->joints[i].write(1500);
-  }
-
   // set up the serial connection
   packet_serial.begin(115200);
   packet_serial.setPacketHandler(onPacket);
