@@ -1,28 +1,29 @@
 import tkinter as tk
 from tkinter import ttk
 
+import config
 
 class SliderGui:
     """
     A GUI that shows a set of sliders to control the motors and read the sensors
     """
-    def __init__(self):
+    def __init__(self, start=[1500] * config.N):
         # create the window
         root = tk.Tk()
         root.resizable(True, False)
         root.minsize(800, 0)
 
-        N = 3
         self._pot_sliders = []
         self._root = root
-        self._servo_values = [1500] * N
+        self._servo_values = start
 
         # create the servo sliders
         servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
         servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        for i in range(N):
+        for i in range(config.N):
             scale = tk.Scale(servo_sliders,
-                from_=0, to=3000, tickinterval=250, orient=tk.HORIZONTAL,
+                from_=config.servo_limits[0], to=config.servo_limits[1],
+                tickinterval=250, orient=tk.HORIZONTAL, takefocus=1,
                 command=lambda evt, i=i: self._servo_changed(evt, i))
             scale.pack(fill=tk.BOTH)
             scale.set(self._servo_values[i])
@@ -30,8 +31,10 @@ class SliderGui:
         # create the potentiometer sliders
         pot_sliders = ttk.LabelFrame(root, text="Analog sensor readings")
         pot_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        for i in range(N):
-            scale = tk.Scale(pot_sliders, from_=0, to=1024, tickinterval=128, state=tk.DISABLED, orient=tk.HORIZONTAL)
+        for i in range(config.N):
+            scale = tk.Scale(pot_sliders, from_=0, to=1024, tickinterval=128,
+                # state=tk.DISABLED,
+                orient=tk.HORIZONTAL)
             scale.pack(fill=tk.BOTH)
             self._pot_sliders.append(scale)
 
@@ -60,9 +63,7 @@ if __name__ == '__main__':
 
     # Run a simple test of sending a packet, and getting some responses
     with Channel('COM4') as c:
-        s = SliderGui()
-
-        s.update_ui((10, 20, 30))
+        s = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):
             c.write(messages.Control(v))
