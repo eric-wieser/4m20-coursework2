@@ -10,7 +10,7 @@ private:
   bool enabled_;
   Servo servo_;
 public:
-  Joint(uint8_t servoPin, uint8_t adcPin) : encoderPin_(adcPin), servoPin_(servoPin), enabled_(false) {
+  Joint(uint8_t servoPin, uint8_t adcPin) : servoPin_(servoPin), encoderPin_(adcPin), enabled_(false) {
   }
 
   void write(int period) {
