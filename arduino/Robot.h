@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Joint.h"
+#include "MPU9250/src/MPU9250.h"
 
 // All of the hardware on the robot
 struct Robot {
   static const int N = 3;
 
   Joint joints[N];
-  // TODO: MPU6050?
+  MPU9250 imu;
 };

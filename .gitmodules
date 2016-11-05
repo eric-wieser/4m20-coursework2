@@ -4,3 +4,6 @@
 [submodule "arduino/PacketSerial"]
 	path = arduino/PacketSerial
 	url = https://github.com/bakercp/PacketSerial.git
+[submodule "arduino/MPU9250"]
+	path = arduino/MPU9250
+	url = https://github.com/sparkfun/SparkFun_MPU-9250_Breakout_Arduino_Library.git
