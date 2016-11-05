@@ -92,6 +92,8 @@ if __name__ == '__main__':
 
                 if isinstance(m, messages.Sensor):
                     sensor_m = m
+                elif isinstance(m, messages.IMUScaled):
+                    pass
 
             if sensor_m:
                 gui.update_ui(sensor_m)

@@ -1,8 +1,8 @@
-#include "Robot.h"
-
 #include "PacketSerial/src/PacketSerial.h"
 
+#include "Robot.h"
 #include "messages.h"
+#include "imu_helpers.h"
 
 PacketSerial packet_serial;
 Robot *robot;
@@ -17,13 +17,30 @@ void setupRobot() {
   robot = &r;
 }
 
-void sendReadings() {
+void sendJointReadings() {
   messages::Framed<messages::Sensor> frame;
 
   // fill the message
   for(int i = 0; i < robot->N; i++) {
     frame.msg.adcs[i] = robot->joints[i].read();
   }
+
+  messages::send(frame, packet_serial);
+}
+
+void sendIMUReadings() {
+  messages::Framed<messages::IMUScaled> frame;
+
+  // fill the message
+  frame.msg.acc[0] = robot->imu.ax;
+  frame.msg.acc[1] = robot->imu.ay;
+  frame.msg.acc[2] = robot->imu.az;
+  frame.msg.gyro[0] = robot->imu.gx;
+  frame.msg.gyro[1] = robot->imu.gy;
+  frame.msg.gyro[2] = robot->imu.gz;
+  frame.msg.mag[0] = robot->imu.mx;
+  frame.msg.mag[1] = robot->imu.my;
+  frame.msg.mag[2] = robot->imu.mz;
 
   messages::send(frame, packet_serial);
 }
@@ -47,8 +64,14 @@ void setup() {
   packet_serial.begin(115200);
   packet_serial.setPacketHandler(onPacket);
 
+  // setup the I2C bus for the MPU9250
+  Wire.begin();
+  setupIMU(robot->imu);
+
   while(1) {
-    sendReadings();
+    updateIMU(robot->imu);
+    sendJointReadings();
+    sendIMUReadings();
     packet_serial.update();
 
     // the cost of not using loop()
