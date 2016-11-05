@@ -37,6 +37,14 @@ class Sensor(Message):
 	code = b'S'
 	fmt = Struct('HHH')
 
+class IMUScaled(Message):
+	code = b'I'
+	fmt = Struct('fffffffff')
+
+	acc  = property(lambda s: s[0:3])
+	gyro = property(lambda s: s[3:6])
+	mag  = property(lambda s: s[6:9])
+
 if __name__ == '__main__':
 	m = Sensor((1, 2, 3))
 	s = m.serialize()

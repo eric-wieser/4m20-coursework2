@@ -20,4 +20,11 @@ namespace messages {
 		// TODO: accelerometer data?
 	};
 	template<> struct traits<Sensor>  : base_trait<Sensor, 'S'>{};
+
+	struct PACKED IMUScaled {
+		float acc[3];
+		float gyro[3];
+		float mag[3];
+	};
+	template<> struct traits<IMUScaled>  : base_trait<IMUScaled, 'I'>{};
 }
