@@ -20,7 +20,7 @@ class Message(tuple):
 
 		if len(rest) != m_type.fmt.size:
 			raise DecodeError('Packet is of length {}, but {} is of length {}'.format(
-				len(rest) - 1, m_type.__name__, m_type.fmt.size
+				len(rest), m_type.__name__, m_type.fmt.size
 			))
 
 		fields = m_type.fmt.unpack(data[1:])
@@ -36,6 +36,10 @@ class Control(Message):
 class Sensor(Message):
 	code = b'S'
 	fmt = Struct('HHH')
+
+class Ping(Message):
+	code = b'P'
+	fmt = Struct('')
 
 class IMUScaled(Message):
 	code = b'I'

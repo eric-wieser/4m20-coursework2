@@ -27,4 +27,7 @@ namespace messages {
 		float mag[3];
 	};
 	template<> struct traits<IMUScaled>  : base_trait<IMUScaled, 'I'>{};
+
+	struct PACKED Ping {};
+	template<> struct traits<Ping>  : base_trait<Ping, 'P'>{ static const size_t size = 0;};
 }

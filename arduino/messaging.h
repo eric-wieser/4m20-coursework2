@@ -39,7 +39,7 @@ namespace messages {
   // send the given framed message on a channel
   template<typename T, typename C>
   inline void send(const Framed<T> &frame, C &channel) {
-    channel.send(reinterpret_cast<const uint8_t*>(&frame), sizeof(frame));
+    channel.send(reinterpret_cast<const uint8_t*>(&frame), sizeof(frame.code) + messages::traits<T>::size);
   }
 }
 

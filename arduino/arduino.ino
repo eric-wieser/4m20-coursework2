@@ -45,12 +45,18 @@ void sendIMUReadings() {
   messages::send(frame, packet_serial);
 }
 
+volatile int pingPending = 0;
 
 void onPacket(const uint8_t* buffer, size_t size) {
   if(auto m = message_cast<const messages::Control*>(buffer, size)) {
+    // update the servo pulse widths
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].write(m->micros[i]);
     }
+  }
+  else if(auto m = message_cast<const messages::Ping*>(buffer, size)) {
+    // send back a response ping
+    pingPending += 1;
   }
   else {
     // bad message type
@@ -69,6 +75,10 @@ void setup() {
   setupIMU(robot->imu);
 
   while(1) {
+    if(pingPending) {
+      messages::send(messages::Framed<messages::Ping>(), packet_serial);
+      pingPending--;
+    }
     updateIMU(robot->imu);
     sendJointReadings();
     sendIMUReadings();
