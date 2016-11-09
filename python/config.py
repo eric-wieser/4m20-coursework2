@@ -14,3 +14,17 @@ servo_0 = servo_0_90[:,0]
 # the limits beyond which the servo can't tell the difference, and might cause
 # damage
 servo_limits = (550, 2300)
+
+# the length of the links, in meters
+lengths = np.array([
+	0.125,
+	0.148,
+	0.149,
+	0.139
+])
+
+# TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
+com = lengths / 2
+
+# TODO: https://github.com/eric-wieser/4m20-coursework2/issues/4
+masses = np.ones(4)
