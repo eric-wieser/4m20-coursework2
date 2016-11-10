@@ -67,7 +67,7 @@ class Channel:
 if __name__ == '__main__':
     # Run a simple test of sending a packet, and getting some responses
     with Channel('COM4') as c:
-        c.write(messages.Control((1400, 1400, 1400)))
+        c.write(messages.ServoPulse((1400, 1400, 1400)))
 
         while True:
             try:

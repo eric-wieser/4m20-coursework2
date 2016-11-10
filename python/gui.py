@@ -76,7 +76,7 @@ if __name__ == '__main__':
         gui = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):
-            c.write(messages.Control(v))
+            c.write(messages.ServoPulse(v))
         gui.on_servo_changed = send_it
 
         def update_it():
@@ -104,4 +104,4 @@ if __name__ == '__main__':
 
         gui._root.mainloop()
 
-        c.write(messages.Control((0xFFFF,)*config.N))
+        c.write(messages.ServoPulse((0xFFFF,)*config.N))

@@ -29,7 +29,9 @@ class Message(tuple):
 	def serialize(self) -> bytes:
 		return self.code + self.fmt.pack(*self)
 
-class Control(Message):
+# these should match the definitions in messages.h
+
+class ServoPulse(Message):
 	code = b'C'
 	fmt = Struct('HHH')
 

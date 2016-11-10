@@ -10,10 +10,10 @@ These traits contain metadata about the packet
 
 namespace messages {
 	// Define some message types
-	struct PACKED Control {
+	struct PACKED ServoPulse {
 		uint16_t micros[3];  // servo durations in uS
 	};
-	template<> struct traits<Control> : base_trait<Control, 'C'>{};
+	template<> struct traits<ServoPulse> : base_trait<ServoPulse, 'C'>{};
 
 	struct PACKED Sensor {
 		uint16_t adcs[3];

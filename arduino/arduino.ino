@@ -48,7 +48,7 @@ void sendIMUReadings() {
 volatile int pingPending = 0;
 
 void onPacket(const uint8_t* buffer, size_t size) {
-  if(auto m = message_cast<const messages::Control*>(buffer, size)) {
+  if(auto m = message_cast<const messages::ServoPulse*>(buffer, size)) {
     // update the servo pulse widths
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].write(m->micros[i]);
