@@ -15,6 +15,12 @@ namespace messages {
 	};
 	template<> struct traits<ServoPulse> : base_trait<ServoPulse, 'C'>{};
 
+	struct PACKED JointConfig {
+		uint16_t minMicros;
+		uint16_t maxMicros;
+	};
+	template<> struct traits<JointConfig> : base_trait<JointConfig, 'J'>{};
+
 	struct PACKED Sensor {
 		uint16_t adcs[3];
 		// TODO: accelerometer data?

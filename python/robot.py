@@ -82,6 +82,13 @@ class Robot(serial.threaded.Packetizer):
 
         raise IOError('Never got a response ping')
 
+
+    def config(self, *, servo_limits_us):
+        msg = messages.JointConfig(servo_limits_us)
+        #TODO: verify this went through!
+        self._write_message(msg)
+        self._write_message(msg)
+
     # servo control
     @property
     def servo_us(self):

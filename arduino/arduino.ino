@@ -58,6 +58,12 @@ void onPacket(const uint8_t* buffer, size_t size) {
     // send back a response ping
     pingPending += 1;
   }
+  else if(auto m = message_cast<const messages::JointConfig*>(buffer, size)) {
+    // send back a response ping
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].setLimits(m->minMicros, m->maxMicros);
+    }
+  }
   else {
     // bad message type
   }
