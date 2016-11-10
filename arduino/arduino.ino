@@ -13,6 +13,7 @@ void setupRobot() {
     Joint(3, 0),
     Joint(5, 1),
     Joint(6, 2),
+    {}
   };
   robot = &r;
 }
@@ -54,7 +55,7 @@ void onPacket(const uint8_t* buffer, size_t size) {
       robot->joints[i].write(m->micros[i]);
     }
   }
-  else if(auto m = message_cast<const messages::Ping*>(buffer, size)) {
+  else if(/* auto m =*/ message_cast<const messages::Ping*>(buffer, size)) {
     // send back a response ping
     pingPending += 1;
   }
