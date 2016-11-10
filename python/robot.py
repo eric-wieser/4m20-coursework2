@@ -1,3 +1,6 @@
+import contextlib
+import threading
+
 import serial.threaded
 from cobs import cobs
 import numpy as np
@@ -6,23 +9,50 @@ import messages
 import config
 import traceback
 
-import threading
-
 class Robot(serial.threaded.Packetizer):
-    @classmethod
-    def connect(cls, port):
-        conn = serial.Serial(port=port, baudrate=115200)
-        return serial.threaded.ReaderThread(conn, cls)
 
-    # implements Packetizer.handle_packet. Shame this can't be private
-    def handle_packet(self, packet):
+    @classmethod
+    @contextlib.contextmanager
+    def connect(cls, port):
+        """
+        Create a new robot, given a port
+
+        This spins off a background thread to read the serial link, and ensures
+        that the connection is functional by sending some pings.
+
+        This must be used in a with statement:
+
+            with Robot.connect('COM4') as r:
+                r.servo_angle = [0, 0, 0]
+        """
+        conn = serial.Serial(port=port, baudrate=115200)
+        with serial.threaded.ReaderThread(conn, cls) as r:
+            r.ping()
+            r.ping()
+            r.config(servo_limits_us=config.servo_limits)
+            yield r
+
+    def __init__(self):
+        """ Create a new robot. This is called internally by ReaderThread """
+        super().__init__()
+        self._servo_us = None
+        self._adc_reading = None
+        self._ping_recvd = False
+
+    def handle_packet(self, packet: bytes):
+        """
+        implements Packetizer.handle_packet. Shame this can't be private
+        """
+        # decode packet
         try:
             raw = cobs.decode(packet)
             msg = messages.Message.deserialize(raw)
         except (messages.DecodeError, cobs.DecodeError) as e:
+            # not much we can do about garbage messages, so log and continue
             print(traceback.format_exception_only(type(e), e)[0].strip())
             return
 
+        # update state, depending on type of message
         if isinstance(msg, messages.Sensor):
             self._adc_reading = msg
         elif isinstance(msg, messages.IMUScaled):
@@ -30,21 +60,22 @@ class Robot(serial.threaded.Packetizer):
         elif isinstance(msg, messages.Ping):
             self._ping_recvd = True
 
-    def _write_message(self, message):
+    def _write_message(self, message: messages.Message):
+        """ Write a message to the serial link """
         raw = message.serialize()
         encoded = cobs.encode(raw)
         self.transport.write(encoded + b'\x00')
 
-    def __init__(self):
-        super().__init__()
-        self._servo_us = None
-        self._adc_reading = None
-        self._ping_recvd = False
 
     def ping(self):
+        """
+        Send a bunch of pings, and wait for a response to any of them.
+
+        This is a bad way of testing when the arduino is ready
+        """
         self._ping_recvd = False
         for i in range(100):
-            r._write_message(messages.Ping())
+            self._write_message(messages.Ping())
             if self._ping_recvd:
                 return
             time.sleep(0.05)
@@ -54,15 +85,18 @@ class Robot(serial.threaded.Packetizer):
     # servo control
     @property
     def servo_us(self):
-        """ the pulse widths of the servos, in us """
+        """
+        the pulse widths of the servos, in us
+        `None` means the servo is off.
+        """
         return self._servo_us
 
     @servo_us.setter
     def servo_us(self, value):
         if value is None:
             value = (0xffff,)*3
-        self._write_message(messages.Control(value))
-        self._servo_us = value
+        self._write_message(messages.ServoPulse(value))
+        self._servo_us = np.array(value, dtype=np.uint16)
 
     @property
     def adc_reading(self):
@@ -87,5 +121,6 @@ class Robot(serial.threaded.Packetizer):
 if __name__ == '__main__':
     import time
     with Robot.connect('COM4') as r:
-        r.ping()
         r.servo_angle = np.array([0, 0, 0])
+        time.sleep(10)
+        r.servo_angle = None
