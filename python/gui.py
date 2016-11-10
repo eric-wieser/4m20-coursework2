@@ -67,41 +67,24 @@ class SliderGui:
 
 
 if __name__ == '__main__':
-    from channel import Channel, NoMessage
+    from robot import Robot
     import messages
 
     # Run a simple test of sending a packet, and getting some responses
-    with Channel('COM4') as c:
-        time.sleep(0.25)
+    with Robot.connect('COM4') as robot:
         gui = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):
-            c.write(messages.ServoPulse(v))
+            robot.servo_us = v
         gui.on_servo_changed = send_it
 
+        # we have to mess around here with .after to keep the UI thread responsive
         def update_it():
-            sensor_m = None
-            while True:
-                try:
-                    m = c.read(timeout=0)
-                except NoMessage:
-                    break
-                except Exception as e:
-                    print(e)
-                    continue
-
-                if isinstance(m, messages.Sensor):
-                    sensor_m = m
-                elif isinstance(m, messages.IMUScaled):
-                    pass
-
-            if sensor_m:
-                gui.update_ui(sensor_m)
-
+            gui.update_ui(robot.adc_reading)
             gui._root.after(10, update_it)
-
         gui._root.after(0, update_it)
 
         gui._root.mainloop()
 
-        c.write(messages.ServoPulse((0xFFFF,)*config.N))
+        # turn off the servos when we're done
+        robot.servo_us = None
