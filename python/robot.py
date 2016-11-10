@@ -149,11 +149,3 @@ class Robot(serial.threaded.Packetizer):
             value = value * config.servo_per_radian + config.servo_0
             value = value.astype(np.uint16)
         self.servo_us = value
-
-
-if __name__ == '__main__':
-    import time
-    with Robot.connect('COM4') as r:
-        r.servo_angle = np.array([0, 0, 0])
-        time.sleep(10)
-        r.servo_angle = None
