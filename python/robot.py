@@ -1,5 +1,7 @@
 import contextlib
 import threading
+import warnings
+import time
 
 import serial.threaded
 from cobs import cobs
@@ -9,11 +11,21 @@ import messages
 import config
 import traceback
 
+def _find_arduino_port() -> str:
+    import serial.tools.list_ports
+    for pinfo in serial.tools.list_ports.comports():
+        if pinfo.serial_number == '85430353531351B09121':
+            return pinfo.device
+
+    raise IOError("Could not find an arduino - is it plugged in?")
+
+_find_arduino_port()
+
 class Robot(serial.threaded.Packetizer):
 
     @classmethod
     @contextlib.contextmanager
-    def connect(cls, port):
+    def connect(cls, port=None):
         """
         Create a new robot, given a port
 
@@ -25,6 +37,11 @@ class Robot(serial.threaded.Packetizer):
             with Robot.connect('COM4') as r:
                 r.servo_angle = [0, 0, 0]
         """
+        if port is None:
+            port = _find_arduino_port()
+        else:
+            warnings.warn("Choosing a specific port may make this only work on your machine!")
+
         conn = serial.Serial(port=port, baudrate=115200)
         with serial.threaded.ReaderThread(conn, cls) as r:
             r.ping()

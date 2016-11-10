@@ -71,7 +71,7 @@ if __name__ == '__main__':
     import messages
 
     # Run a simple test of sending a packet, and getting some responses
-    with Robot.connect('COM4') as robot:
+    with Robot.connect() as robot:
         gui = SliderGui(start=[c[0] for c in config.servo_0_90])
 
         def send_it(v):
