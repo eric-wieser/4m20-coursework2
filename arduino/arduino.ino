@@ -65,6 +65,12 @@ void onPacket(const uint8_t* buffer, size_t size) {
       robot->joints[i].setLimits(m->minMicros, m->maxMicros);
     }
   }
+  else if(auto m = message_cast<const messages::ServoForce*>(buffer, size)) {
+    // enable force control on the joints
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].writeForce(m->adcs[i]);
+    }
+  }
   else {
     // bad message type
   }
@@ -90,6 +96,9 @@ void setup() {
     sendJointReadings();
     sendIMUReadings();
     packet_serial.update();
+
+    // do any periodic updates needed
+    robot->update();
 
     // the cost of not using loop()
     if (serialEventRun) serialEventRun();

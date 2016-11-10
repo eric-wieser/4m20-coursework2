@@ -7,13 +7,16 @@ class Joint {
 private:
   uint8_t servoPin_;
   uint8_t encoderPin_;
-  bool enabled_;
+
+  enum ControlMode { DISABLED, POSITION, FORCE};
+  ControlMode mode_;
   Servo servo_;
 
   int limitMin_ = 0;
   int limitMax_ = 3000;
 
   int period_ = 0;
+  int targetForce_ = 512;
 
   inline int clamp(int period) {
     if(period > limitMax_) return limitMax_;
@@ -21,26 +24,37 @@ private:
     return period;
   }
 
+  void write_(int period) {
+    // clip the value to avoid damage
+    period_ = clamp(period);
+    servo_.writeMicroseconds(period_);
+  }
+
 public:
-  Joint(uint8_t servoPin, uint8_t adcPin) : servoPin_(servoPin), encoderPin_(adcPin), enabled_(false) {
+  Joint(uint8_t servoPin, uint8_t adcPin) : servoPin_(servoPin), encoderPin_(adcPin), mode_(DISABLED) {
   }
 
   void write(int period) {
     if(period == -1) {
       servo_.detach();
-      enabled_ = false;
+      mode_ = DISABLED;
     }
     else {
       //enable the servo if this is our first time
-      if(!enabled_) {
+      if(mode_ == DISABLED) {
         servo_.attach(servoPin_);
-        enabled_ = true;
       }
-
-      // clip the value to avoid damage
-      period_ = clamp(period);
-      servo_.writeMicroseconds(period_);
+      mode_ = POSITION;
+      write_(period);
     }
+  }
+
+  void writeForce(int f) {
+    targetForce_ = f;
+    if(mode_ == DISABLED) {
+      servo_.attach(servoPin_);
+    }
+    mode_ = FORCE;
   }
 
   void setLimits(int limitMin, int limitMax) {
@@ -48,12 +62,20 @@ public:
     limitMax_ = limitMax;
 
     // make sure we're not already violating these limits
-    if(enabled_) {
+    if(mode_ != DISABLED) {
       write(period_);
     }
   }
 
   int read() const {
     return analogRead(encoderPin_);
+  }
+
+  void update() {
+    if(mode_ != FORCE) return;
+
+    // simple proportional force controller
+    int err = targetForce_ - read();
+    write_(period_ + err);
   }
 };

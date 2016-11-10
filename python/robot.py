@@ -113,6 +113,11 @@ class Robot(serial.threaded.Packetizer):
         return self._adc_reading
 
     @property
+    def target_adc_reading(self, value):
+        """ use force control to try and hit the desired ADC value """
+        self._write_message(messages.ServoForce(value))
+
+    @property
     def servo_angle(self):
         """ return the servo angle in radians """
         if self.servo_us is None:
@@ -124,6 +129,7 @@ class Robot(serial.threaded.Packetizer):
             value = value * config.servo_per_radian + config.servo_0
             value = value.astype(np.uint16)
         self.servo_us = value
+
 
 if __name__ == '__main__':
     import time

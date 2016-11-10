@@ -9,4 +9,10 @@ struct Robot {
 
   Joint joints[N];
   MPU9250 imu;
+
+  void update() {
+    for(int i = 0; i < N; i++) {
+      joints[i].update();
+    }
+  }
 };

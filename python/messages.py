@@ -35,6 +35,10 @@ class ServoPulse(Message):
 	code = b'C'
 	fmt = Struct('HHH')
 
+class ServoForce(Message):
+	code = b'F'
+	fmt = Struct('HHH')
+
 class JointConfig(Message):
 	code = b'J'
 	fmt = Struct('HH')
