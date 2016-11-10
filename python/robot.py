@@ -130,8 +130,11 @@ class Robot(serial.threaded.Packetizer):
         return self._adc_reading
 
     @property
+    def target_adc_reading(self): raise ValueError
+    @target_adc_reading.setter
     def target_adc_reading(self, value):
         """ use force control to try and hit the desired ADC value """
+        value = value.astype(np.uint16)
         self._write_message(messages.ServoForce(value))
 
     @property

@@ -98,7 +98,7 @@ void setup() {
     packet_serial.update();
 
     // do any periodic updates needed
-    robot->update();
+    robot->update(millis());
 
     // the cost of not using loop()
     if (serialEventRun) serialEventRun();

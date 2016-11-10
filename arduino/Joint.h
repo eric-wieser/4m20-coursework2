@@ -18,6 +18,8 @@ private:
   int period_ = 0;
   int targetForce_ = 512;
 
+  uint32_t lastUpdate_ = 0;
+
   inline int clamp(int period) {
     if(period > limitMax_) return limitMax_;
     if(period < limitMin_) return limitMin_;
@@ -49,14 +51,6 @@ public:
     }
   }
 
-  void writeForce(int f) {
-    targetForce_ = f;
-    if(mode_ == DISABLED) {
-      servo_.attach(servoPin_);
-    }
-    mode_ = FORCE;
-  }
-
   void setLimits(int limitMin, int limitMax) {
     limitMin_ = limitMin;
     limitMax_ = limitMax;
@@ -71,11 +65,25 @@ public:
     return analogRead(encoderPin_);
   }
 
-  void update() {
+  void writeForce(int f) {
+    targetForce_ = f;
+    if(mode_ == DISABLED) {
+      servo_.attach(servoPin_);
+      period_ = (limitMax_ + limitMin_) / 2; // start in the middle of the range to maximize our chances
+    }
+    mode_ = FORCE;
+  }
+
+  void update(uint32_t ms) {
     if(mode_ != FORCE) return;
+
+    // only update every 50ms, to avoid oscillation
+    if(ms < lastUpdate_ + 2) return;
 
     // simple proportional force controller
     int err = targetForce_ - read();
-    write_(period_ + err);
+    write_(period_ + err / 2);
+
+    lastUpdate_ = ms;
   }
 };
