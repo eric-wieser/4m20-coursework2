@@ -44,10 +44,14 @@ class Robot(serial.threaded.Packetizer):
 
         conn = serial.Serial(port=port, baudrate=115200)
         with serial.threaded.ReaderThread(conn, cls) as r:
+            time.sleep(0.5)
             r.ping()
             r.ping()
             r.config(servo_limits_us=config.servo_limits)
-            yield r
+            try:
+                yield r
+            finally:
+                r.servo_us = None
 
     def __init__(self):
         """ Create a new robot. This is called internally by ReaderThread """
