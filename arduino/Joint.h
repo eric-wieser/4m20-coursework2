@@ -51,6 +51,10 @@ public:
     }
   }
 
+  int16_t getPeriod() {
+    return period_;
+  }
+
   void setLimits(int16_t limitMin, int16_t limitMax) {
     limitMin_ = limitMin;
     limitMax_ = limitMax;

@@ -46,6 +46,15 @@ void sendIMUReadings() {
   messages::send(frame, packet_serial);
 }
 
+void sendServoPulseWidths() {
+  messages::Framed<messages::ServoPulse> frame;
+
+  for(int i = 0; i < robot->N; i++) {
+    frame.msg.micros[i] = robot->joints[i].getPeriod();
+  }
+
+}
+
 volatile int pingPending = 0;
 
 void onPacket(const uint8_t* buffer, size_t size) {
@@ -94,6 +103,7 @@ void setup() {
     }
     updateIMU(robot->imu);
     sendJointReadings();
+    sendServoPulseWidths();
     sendIMUReadings();
     packet_serial.update();
 

@@ -2,6 +2,7 @@ import contextlib
 import threading
 import warnings
 import time
+import enum
 
 import serial.threaded
 from cobs import cobs
@@ -20,6 +21,11 @@ def _find_arduino_port() -> str:
     raise IOError("Could not find an arduino - is it plugged in?")
 
 _find_arduino_port()
+
+class ControlMode(enum.Enum):
+    Period = object()
+    Torque = object()
+
 
 class Robot(serial.threaded.Packetizer):
 
@@ -59,6 +65,7 @@ class Robot(serial.threaded.Packetizer):
         self._servo_us = None
         self._adc_reading = None
         self._ping_recvd = False
+        self._mode = ControlMode.Period
 
     def handle_packet(self, packet: bytes):
         """
@@ -78,6 +85,9 @@ class Robot(serial.threaded.Packetizer):
             self._adc_reading = msg
         elif isinstance(msg, messages.IMUScaled):
             pass
+        elif isinstance(msg, messages.ServoPulse):
+            if self._mode == ControlMode.Torque:
+                self.servo_us = np.asarray(msg)
         elif isinstance(msg, messages.Ping):
             self._ping_recvd = True
 
@@ -123,6 +133,7 @@ class Robot(serial.threaded.Packetizer):
     def servo_us(self, value):
         if value is None:
             value = (0xffff,)*3
+        self._mode = ControlMode.Period
         self._write_message(messages.ServoPulse(value))
         self._servo_us = np.array(value, dtype=np.uint16)
 
@@ -139,6 +150,7 @@ class Robot(serial.threaded.Packetizer):
     def target_adc_reading(self, value):
         """ use force control to try and hit the desired ADC value """
         value = value.astype(np.uint16)
+        self._mode = ControlMode.Torque
         self._write_message(messages.ServoForce(value))
 
     @property
