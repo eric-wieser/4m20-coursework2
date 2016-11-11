@@ -47,11 +47,14 @@ class BackgroundTK:
         self.open = True
         self._tk.mainloop()
         self.open = False
-        self._tk.quit()
-        self._tk = None
+
+        self.__bg_stop();
 
     def __bg_stop(self):
-        self._tk.quit()
+        # clean up as well as possible
+        if self._tk:
+            self._tk.quit()
+            self._tk = None
 
     def __enter__(self):
         """
@@ -72,7 +75,6 @@ class BackgroundTK:
         """
         if self.open:
             self._tk.after(0, self.__bg_stop)
-
         self._thread.join()
         self.open = False
         self._tk = None
