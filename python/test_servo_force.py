@@ -2,22 +2,21 @@
 Demo a compliance controller exerting zero torque
 """
 import time
+import tkinter as tk
 
 import numpy as np
 
 from robot import Robot
+import config
+from ui import GeometryVisualizer, BackgroundTK
 
-with Robot.connect() as r:
-    time.sleep(1)
+@BackgroundTK
+def ui(root):
+    v = GeometryVisualizer(root, robot=r, width=400, height=400)
+    v.pack(fill=tk.BOTH)
 
-    tot = np.uint32(0)
-    for i in range(10):
-        adc = r.adc_reading
-        tot += adc
-        time.sleep(.05)
-    tot //= 10
+with Robot.connect() as r, ui:
+    r.target_adc_reading = config.adc_0
 
-    print("Enabling compliance control, {}".format(tot))
-
-    r.target_adc_reading = tot
-    time.sleep(100)
+    while ui.open:
+        time.sleep(0.1)

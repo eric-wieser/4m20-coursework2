@@ -53,6 +53,7 @@ void sendServoPulseWidths() {
     frame.msg.micros[i] = robot->joints[i].getPeriod();
   }
 
+  messages::send(frame, packet_serial);
 }
 
 volatile int pingPending = 0;
