@@ -23,6 +23,18 @@ lengths = np.array([
 	0.139
 ])
 
+# These are the adc readings when a link is held horizontally, and the adjacent
+# link allowed to fall under gravity. The heavier side of the joint is the on
+# that should be held. By repeating the experiment with the setup upsidedown,
+# we should get two torques that sum to zero, giving us the reading
+# corresponding to zero torque
+_adc_lims = np.array([
+	[515, 525],
+	[455, 600],
+	[519, 544]
+])
+adc_0 = _adc_lims.mean(axis=1)
+
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
 com = lengths / 2
 
