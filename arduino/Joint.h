@@ -12,21 +12,21 @@ private:
   ControlMode mode_;
   Servo servo_;
 
-  int limitMin_ = 0;
-  int limitMax_ = 3000;
+  int16_t limitMin_ = 0;
+  int16_t limitMax_ = 3000;
 
-  int period_ = 0;
-  int targetForce_ = 512;
+  int16_t period_ = 0;
+  int16_t targetForce_ = 512;
 
   uint32_t lastUpdate_ = 0;
 
-  inline int clamp(int period) {
+  inline int16_t clamp(int16_t period) {
     if(period > limitMax_) return limitMax_;
     if(period < limitMin_) return limitMin_;
     return period;
   }
 
-  void write_(int period) {
+  void write_(int16_t period) {
     // clip the value to avoid damage
     period_ = clamp(period);
     servo_.writeMicroseconds(period_);
@@ -51,7 +51,7 @@ public:
     }
   }
 
-  void setLimits(int limitMin, int limitMax) {
+  void setLimits(int16_t limitMin, int16_t limitMax) {
     limitMin_ = limitMin;
     limitMax_ = limitMax;
 
@@ -61,11 +61,11 @@ public:
     }
   }
 
-  int read() const {
+  int16_t read() const {
     return analogRead(encoderPin_);
   }
 
-  void writeForce(int f) {
+  void writeForce(int16_t f) {
     targetForce_ = f;
     if(mode_ == DISABLED) {
       servo_.attach(servoPin_);
