@@ -25,7 +25,7 @@ class GeometryVisualizer(tk.Canvas):
     def on_resize(self, event):
         self.origin = np.array([
              float(event.width), float(event.height)
-        ]) / 2
+        ]) * np.array([0.1, 0.5])
         self.__update_once()
 
     def _to_screen_coords(self, coords):
@@ -36,6 +36,8 @@ class GeometryVisualizer(tk.Canvas):
         for link, pos in zip(self.links, self.robot.joint_positions):
             coords = np.array([last, pos])
             coords = self._to_screen_coords(coords)
+            if np.isnan(coords).any():
+                return
             self.coords(link, *coords.ravel())
             last = pos
 
