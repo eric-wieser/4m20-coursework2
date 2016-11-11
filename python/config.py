@@ -40,3 +40,15 @@ com = lengths / 2
 
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/4
 masses = np.ones(4)
+
+
+# Make everything read only!
+
+for arr in [servo_0, servo_per_radian, adc_0, com, masses, lengths]:
+	arr.setflags(write=False)
+
+if __name__ == '__main__':
+	print('servo_0', servo_0)
+	print('servo_per_radian', servo_per_radian)
+	print('adc_0', adc_0)
+	print('lengths', lengths)
