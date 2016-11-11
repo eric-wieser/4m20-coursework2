@@ -3,6 +3,7 @@ from tkinter import ttk
 
 import config
 import time
+from ui import GeometryVisualizer
 
 class SliderGui:
     """
@@ -72,7 +73,9 @@ if __name__ == '__main__':
 
     # Run a simple test of sending a packet, and getting some responses
     with Robot.connect() as robot:
-        gui = SliderGui(start=[c[0] for c in config.servo_0_90])
+        gui = SliderGui(start=config.servo_0.copy())
+        vis = GeometryVisualizer(gui._root, robot=robot, width=200, height=200)
+        vis.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         def send_it(v):
             robot.servo_us = v
