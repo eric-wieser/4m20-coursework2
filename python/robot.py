@@ -45,7 +45,7 @@ class RobotBase(metaclass=abc.ABCMeta):
     def joint_angles(self):
         res = np.empty(4)
         res[0] = 0 # first link is clamped
-        res[1:] = self.servo_angle  # TODO: account for displacement
+        res[1:] = np.cumsum(self.servo_angle)  # TODO: account for displacement
         return res
 
     @property
@@ -124,7 +124,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             pass
         elif isinstance(msg, messages.ServoPulse):
             if self._mode == ControlMode.Torque:
-                self.servo_us = np.asarray(msg)
+                self._servo_us = np.asarray(msg)
         elif isinstance(msg, messages.Ping):
             self._ping_recvd = True
 
