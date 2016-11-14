@@ -8,14 +8,9 @@ import numpy as np
 
 from robot import Robot
 import config
-from ui import GeometryVisualizer, BackgroundTK
+import ui
 
-@BackgroundTK
-def ui(root):
-    v = GeometryVisualizer(root, robot=r, width=400, height=400)
-    v.pack(fill=tk.BOTH)
-
-with Robot.connect() as r, ui:
+with Robot.connect() as r, ui.basic(r)
     r.target_adc_reading = config.adc_0
 
     while ui.open:
