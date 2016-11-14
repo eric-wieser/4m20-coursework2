@@ -68,6 +68,7 @@ class BackgroundTK:
         self._started.wait()
         if self._exc:
             raise self._exc
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """

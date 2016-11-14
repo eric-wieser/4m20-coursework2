@@ -3,7 +3,13 @@ from .visualizer import GeometryVisualizer
 
 
 def basic(r):
-    """ a basic user interface that shows the arm orientation """
+    """
+    A basic user interface that shows the arm orientation
+
+    with Robot.connect() as r, ui.basic(r) as gui:
+        while gui.open:
+            ...
+    """
     import tkinter as tk
     @BackgroundTK
     def gui(root):
