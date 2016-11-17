@@ -42,20 +42,24 @@ class RobotBase(metaclass=abc.ABCMeta):
     def target_adc_reading(self, value): raise NotImplementedError
 
     @property
+    def link_angles(self):
+        res = np.empty(4)
+        res[0] = 0 # first link is clamped
+        res[1:] = np.cumsum(self.joint_angles)
+        return res
+
+    @property
     def joint_angles(self):
         s_angle = 0
         if self.servo_angle is not None:
             s_angle += self.servo_angle
         if self.adc_reading is not None:
             s_angle -= self.angle_error
-        res = np.empty(4)
-        res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(s_angle)  # TODO: account for displacement
-        return res
+        return s_angle
 
     @property
     def joint_positions(self):
-        angles = self.joint_angles
+        angles = self.link_angles
         directions = np.stack([
             np.cos(angles),
             np.sin(angles)
@@ -233,6 +237,10 @@ class SimulatedRobot(RobotBase):
     @servo_angle.setter
     def servo_angle(self, value):
         self._servo_angle = value
+
+    @property
+    def angle_error(self):
+        return np.zeros(3)
 
     @property
     def adc_reading(self):
