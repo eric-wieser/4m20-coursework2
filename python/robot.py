@@ -181,7 +181,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             value = (0xffff,)*3
         self._mode = ControlMode.Period
         self._write_message(messages.ServoPulse(value))
-        self._servo_us = np.array(value, dtype=np.uint16)
+        self._servo_us = np.clip(np.array(value, dtype=np.uint16), *config.servo_limits)
 
     @property
     def servo_angle(self):
