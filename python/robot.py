@@ -47,7 +47,7 @@ class RobotBase(metaclass=abc.ABCMeta):
         if self.servo_angle is not None:
             s_angle += self.servo_angle
         if self.adc_reading is not None:
-            s_angle -= (self.adc_reading - config.adc_0)*config.rad_per_adc
+            s_angle -= self.angle_error
         res = np.empty(4)
         res[0] = 0 # first link is clamped
         res[1:] = np.cumsum(s_angle)  # TODO: account for displacement
@@ -191,6 +191,10 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             value = value * config.servo_per_radian + config.servo_0
             value = value.astype(np.uint16)
         self.servo_us = value
+
+    @property
+    def angle_error(self):
+        return (self.adc_reading - config.adc_0)*config.rad_per_adc
 
     @property
     def adc_reading(self):
