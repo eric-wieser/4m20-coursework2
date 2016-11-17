@@ -35,6 +35,11 @@ _adc_lims = np.array([
 ])
 adc_0 = _adc_lims.mean(axis=1)
 
+#See Link 3 Data.txt for 
+adc_0[2] = 528.7845903
+rad_per_adc = np.radians(0.368583536)
+
+
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
 com = lengths / 2
 

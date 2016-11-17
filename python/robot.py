@@ -43,9 +43,14 @@ class RobotBase(metaclass=abc.ABCMeta):
 
     @property
     def joint_angles(self):
+        s_angle = 0
+        if self.servo_angle is not None:
+            s_angle += self.servo_angle
+        if self.adc_reading is not None:
+            s_angle -= (self.adc_reading - config.adc_0)*config.rad_per_adc
         res = np.empty(4)
         res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(self.servo_angle)  # TODO: account for displacement
+        res[1:] = np.cumsum(s_angle)  # TODO: account for displacement
         return res
 
     @property
