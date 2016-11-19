@@ -4,9 +4,7 @@
 # phi1, phi2, phi3 are q1, q2 and q3
 
 import numpy as np
-from numpy import sin, cos
 from functions import pJ, f
-from math import pi
 
 # the length of the links, in meters
 from config import lengths
@@ -29,6 +27,8 @@ def get_sympy_jacobian():
 	return np.array([J1, J2])
 
 def get_servo_angles(xcoord,ycoord):
+	from numpy import sin, cos
+
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
 
@@ -46,13 +46,7 @@ def get_servo_angles(xcoord,ycoord):
 		q = q + np.dot(pJ(q),(r-f(q)))
 
 	# change q so that it is between 0 and 2pi
-	for i in range(0,4):
-		if q[i] < 0:
-			while q[i] < 0:
-				q[i] = q[i] + 2*pi
-		if q[i] > 2*pi:
-			while q[i] > 0:
-				q[i] = q[i] - 2*pi
+	q = q % 2*np.pi
 
 	# print(f(q)) # checking that end effector is in the right location for the new q
 
