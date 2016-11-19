@@ -26,14 +26,14 @@ def get_sympy_jacobian():
 
 	return np.array([J1, J2])
 
-def get_servo_angles(xcoord,ycoord):
+def get_servo_angles(r):
 	from numpy import sin, cos
 
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
 
 	# r is the desired coordinate of the foot that is not the base foot (the end effector)
-	r = np.array([xcoord, ycoord], dtype=np.float64)
+	r = np.asarray(r)
 	# change starting angles
 	q1 = 2.0
 	q2 = 2.0
@@ -54,5 +54,5 @@ def get_servo_angles(xcoord,ycoord):
 	return q[1:]
 
 if __name__ == '__main__':
-	print(get_servo_angles(0.3,0.3))
+	print(get_servo_angles([0.3,0.3]))
 	print("Jacobian is", get_sympy_jacobian())
