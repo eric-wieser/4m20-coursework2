@@ -33,13 +33,13 @@ def get_servo_angles(xcoord,ycoord):
 	# the inputs are the coordinates for the desired location of the end effector
 
 	# r is the desired coordinate of the foot that is not the base foot (the end effector)
-	r = np.array([[xcoord], [ycoord]], dtype=np.float64)
+	r = np.array([xcoord, ycoord], dtype=np.float64)
 	# change starting angles
 	q1 = 2.0
 	q2 = 2.0
 	q3 = 2.0
 	q4 = 2.0
-	q = np.array([[q1], [q2], [q3], [q4]], dtype=np.float64)
+	q = np.array([q1, q2, q3, q4], dtype=np.float64)
 
 	# find set of angles (q) to get to r
 	for i in range(1,200):
@@ -51,7 +51,7 @@ def get_servo_angles(xcoord,ycoord):
 	# print(f(q)) # checking that end effector is in the right location for the new q
 
 	# remember q[0][0] is phi1, q[1][0] is phi2, q[2][0] is phi3, q[3][0] is phi4
-	return q[1:,0]
+	return q[1:]
 
 if __name__ == '__main__':
 	print(get_servo_angles(0.3,0.3))
