@@ -48,8 +48,6 @@ def f(qq):
 	return np.array([-(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4)), lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)], dtype=np.float64)
 
 def get_servo_angles(r):
-	from numpy import sin, cos
-
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
 
