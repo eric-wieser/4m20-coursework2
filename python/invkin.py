@@ -28,10 +28,9 @@ def get_sympy_jacobian():
 
 	return np.array([J1, J2])
 
-def getservos(xcoord,ycoord):
+def get_servo_angles(xcoord,ycoord):
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
-	from config import servo_per_radian as sv
 
 	# r is the desired coordinate of the foot that is not the base foot (the end effector)
 	r = np.array([[xcoord], [ycoord]], dtype=np.float64)
@@ -58,8 +57,7 @@ def getservos(xcoord,ycoord):
 	# print(f(q)) # checking that end effector is in the right location for the new q
 
 	# remember q[0][0] is phi1, q[1][0] is phi2, q[2][0] is phi3, q[3][0] is phi4
-	servos = np.array([q[1][0]*sv[0], q[2][0]*sv[1], q[3][0]*sv[2]])
-	return(servos)
+	return q[1:,0]
 
 if __name__ == '__main__':
 	print(get_servo_angles(0.3,0.3))
