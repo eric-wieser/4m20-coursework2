@@ -1,5 +1,3 @@
-# x,y is location of end effector (i.e. the other foot)
-
 # angles defined in the same way as in the coursework, 
 # but all angles are clockwise in the positive direction
 
@@ -7,24 +5,18 @@
 
 import numpy as np
 from numpy import sin, cos
-from numpy.linalg import pinv
 from sympy import *
-from sympy.matrices import *
-from sympy.interactive.printing import init_printing
 from functions import pJ, f
+from math import pi
 
-# the length of the links, in meters
-lengths = np.array([
-	0.125,
-	0.148,
-	0.149,
-	0.139
-])
-
+# Calculating J and pinvJ using symbolic algebra - only have to do this if J & pinvJ need to be recalculated
 qq1 = Symbol('qq1')
 qq2 = Symbol('qq2')
 qq3 = Symbol('qq3')
 qq4 = Symbol('qq4')
+
+# the length of the links, in meters
+from config import lengths
 
 x = -(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4))
 y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)
@@ -32,24 +24,43 @@ y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) 
 J1 =[diff(x,qq1), diff(x,qq2), diff(x,qq3), diff(x,qq4)]
 J2 =[diff(y,qq1), diff(y,qq2), diff(y,qq3), diff(y,qq4)]
 
-# r is the desired coordinate of the other foot
-r = np.array([[0.4], [0.4]], dtype=np.float)
+#print(["J1 =",J1],["J2=",J2]) # uncomment to print J out
 
-# change starting angles
-q1 = 1.0
-q2 = 1.0
-q3 = 1.0
-q4 = 1.0
+J = np.array([J1, J2]) 
 
-q = np.array([q1, q2, q3, q4])
+def getservos(xcoord,ycoord):
+	# returns a set of servo values to send to the robot
+	# the inputs are the coordinates for the desired location of the end effector
+	from config import servo_per_radian as sv
 
-for i in range(1,1000):
-	temp = np.array([[q[0]], [q[1]], [q[2]], [q[3]]])
-	q = temp + np.dot(pJ(q),(r-f(q)))
-	q = [q[0][0], q[1][0], q[2][0], q[3][0]]
+	# r is the desired coordinate of the foot that is not the base foot (the end effector)
+	r = np.array([[xcoord], [ycoord]], dtype=np.float64)
+	# change starting angles 
+	q1 = 2.0
+	q2 = 2.0
+	q3 = 2.0
+	q4 = 2.0
+	q = np.array([[q1], [q2], [q3], [q4]], dtype=np.float64)
 
+	# find set of angles (q) to get to r
+	for i in range(1,200):
+		q = q + np.dot(pJ(q),(r-f(q)))
 
-print(f(q),q)
+	# change q so that it is between 0 and 2pi
+	for i in range(0,4):
+		if q[i] < 0:
+			while q[i] < 0:
+				q[i] = q[i] + 2*pi
+		if q[i] > 2*pi:
+			while q[i] > 0:
+				q[i] = q[i] - 2*pi
 
+	# print(f(q)) # checking that end effector is in the right location for the new q
+
+	# remember q[0][0] is phi1, q[1][0] is phi2, q[2][0] is phi3, q[3][0] is phi4
+	servos = np.array([q[1][0]*sv[0], q[2][0]*sv[1], q[3][0]*sv[2]])
+	return(servos)
+
+# print(getservos(0.3,0.3)) 
 
 
