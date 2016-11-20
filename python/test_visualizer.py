@@ -15,8 +15,10 @@ def ui(root):
     v.pack(fill=tk.BOTH)
 
 with Robot.connect() as r, ui:
-    i = 0
     while ui.open:
-        r.servo_angle = np.radians([30, -45, 15])*i/10
-        time.sleep(.1)
-        i += 1
+        t = time.time()
+        f = 0.5  # Hz
+        A = np.radians(45)
+        r.servo_angle = np.array([-A*0.5, 0, A])*np.sin(2*np.pi*f*t)
+        r.angle_error = r.servo_angle / 2
+        time.sleep(0.01)
