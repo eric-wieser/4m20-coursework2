@@ -14,6 +14,7 @@ servo_0 = servo_0_90[:,0]
 # the limits beyond which the servo can't tell the difference, and might cause
 # damage
 servo_limits = (550, 2300)
+servo_angle_limits = (np.array(servo_limits) - servo_0[:,np.newaxis]) / servo_per_radian[:,np.newaxis]
 
 # the length of the links, in meters
 lengths = np.array([
@@ -44,11 +45,12 @@ masses = np.ones(4)
 
 # Make everything read only!
 
-for arr in [servo_0, servo_per_radian, adc_0, com, masses, lengths]:
+for arr in [servo_0, servo_per_radian, servo_angle_limits, adc_0, com, masses, lengths]:
 	arr.setflags(write=False)
 
 if __name__ == '__main__':
 	print('servo_0', servo_0)
 	print('servo_per_radian', servo_per_radian)
+	print('servo_angle_limits', servo_angle_limits)
 	print('adc_0', adc_0)
 	print('lengths', lengths)
