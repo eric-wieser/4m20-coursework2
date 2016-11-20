@@ -76,6 +76,7 @@ class RobotBase(metaclass=abc.ABCMeta):
 class ControlMode(enum.Enum):
     Period = object()
     Torque = object()
+    Position = object()
 
 class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
     """ The low-level messaging-level operations of the robot """
@@ -166,10 +167,12 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
 
 
     def config(self, *, servo_limits_us):
-        msg = messages.JointConfig(servo_limits_us)
+        config_data = servo_limits_us + config.servo_per_adc # TODO make this less hacky
+        msg = messages.JointConfig(config_data)
         #TODO: verify this went through!
         self._write_message(msg)
         self._write_message(msg)
+
 
     # servo control
     @property
@@ -221,6 +224,14 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         self._mode = ControlMode.Torque
         self._write_message(messages.ServoForce(value))
 
+    @property
+    def target_servo_position(self): raise ValueError
+    @target_servo_position.setter
+    def target_servo_position(self, value):
+        """ use position control to try and hit the desired angle """
+        value = value.astype(np.float32)
+        self._mode = ControlMode.Position
+        self._write_message(messages.ServoPosition(value))
 
 class SimulatedRobot(RobotBase):
     """

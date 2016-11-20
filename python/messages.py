@@ -41,7 +41,7 @@ class ServoForce(Message):
 
 class JointConfig(Message):
 	code = b'J'
-	fmt = Struct('HH')
+	fmt = Struct('HHf')
 
 class Sensor(Message):
 	code = b'S'

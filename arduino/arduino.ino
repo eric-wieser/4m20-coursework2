@@ -73,12 +73,19 @@ void onPacket(const uint8_t* buffer, size_t size) {
     // send back a response ping
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].setLimits(m->minMicros, m->maxMicros);
+      robot->joints[i].setServoToAdc(m->servo_per_adc);
     }
   }
   else if(auto m = message_cast<const messages::ServoForce*>(buffer, size)) {
     // enable force control on the joints
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].writeForce(m->adcs[i]);
+    }
+  }
+  else if(auto m = message_cast<const messages::JointPosition*>(buffer, size)) {
+    // enable force control on the joints
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].writePosition(m->servo[i]);
     }
   }
   else {

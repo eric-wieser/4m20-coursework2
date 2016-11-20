@@ -12,11 +12,14 @@ private:
   ControlMode mode_;
   Servo servo_;
 
+  float servo_per_adc_ = 3.5;
+
   int16_t limitMin_ = 0;
   int16_t limitMax_ = 3000;
 
   int16_t period_ = 0;
   int16_t targetForce_ = 512;
+  int16_t targetPosition_ = 512;
 
   uint32_t lastUpdate_ = 0;
 
@@ -65,6 +68,10 @@ public:
     }
   }
 
+  void setServoToAdc(float conversionFactor) {
+    servo_per_adc_ = conversionFactor;
+  }
+
   int16_t read() const {
     return analogRead(encoderPin_);
   }
@@ -78,16 +85,41 @@ public:
     mode_ = FORCE;
   }
 
+  void writePosition(int16_t servo) {
+    targetPosition_ = servo;
+    if(mode_ == DISABLED) {
+      servo_.attach(servoPin_);
+      period_ = clamp(servo); 
+    }
+    mode_ = POSITION;
+  }
+
   void update(uint32_t ms) {
-    if(mode_ != FORCE) return;
+    if(mode_ == FORCE){ 
+        // only update every 50ms, to avoid oscillation
+        if(ms < lastUpdate_ + 2) return;
 
-    // only update every 50ms, to avoid oscillation
-    if(ms < lastUpdate_ + 2) return;
+        // simple proportional force controller
+        int err = targetForce_ - read();
+        write_(period_ + err / 2);
 
-    // simple proportional force controller
-    int err = targetForce_ - read();
-    write_(period_ + err / 2);
+        lastUpdate_ = ms;
+    }
+    else{
+      if(mode_ == POSITION){
+        // only update every 50ms, to avoid oscillation
+        if(ms < lastUpdate_ + 2) return;
 
-    lastUpdate_ = ms;
+        int err = servo_per_adc_*read();
+        write_(period_ + err);
+
+        lastUpdate_ = ms;
+      }
+      else{
+        return;
+      }
+    }
+
+  
   }
 };
