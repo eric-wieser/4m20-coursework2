@@ -68,6 +68,11 @@ class RobotBase(metaclass=abc.ABCMeta):
             config.lengths[:,np.newaxis]*directions
         )
 
+    @property 
+    def joints_stalled(self):
+        return (self.adc_reading >= 680) | (self.adc_reading <= 360)
+        
+
 class ControlMode(enum.Enum):
     Period = object()
     Torque = object()
