@@ -42,15 +42,24 @@ class RobotBase(metaclass=abc.ABCMeta):
     def target_adc_reading(self, value): raise NotImplementedError
 
     @property
-    def joint_angles(self):
+    def link_angles(self):
         res = np.empty(4)
         res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(self.servo_angle)  # TODO: account for displacement
+        res[1:] = np.cumsum(self.joint_angles)
         return res
 
     @property
+    def joint_angles(self):
+        s_angle = 0
+        if self.servo_angle is not None:
+            s_angle += self.servo_angle
+        if self.adc_reading is not None:
+            s_angle -= self.angle_error
+        return s_angle
+
+    @property
     def joint_positions(self):
-        angles = self.joint_angles
+        angles = self.link_angles
         directions = np.stack([
             np.cos(angles),
             np.sin(angles)
@@ -172,7 +181,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             value = (0xffff,)*3
         self._mode = ControlMode.Period
         self._write_message(messages.ServoPulse(value))
-        self._servo_us = np.array(value, dtype=np.uint16)
+        self._servo_us = np.clip(np.array(value, dtype=np.uint16), *config.servo_limits)
 
     @property
     def servo_angle(self):
@@ -186,6 +195,10 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             value = value * config.servo_per_radian + config.servo_0
             value = value.astype(np.uint16)
         self.servo_us = value
+
+    @property
+    def angle_error(self):
+        return (self.adc_reading - config.adc_0)*config.rad_per_adc
 
     @property
     def adc_reading(self):
@@ -224,6 +237,10 @@ class SimulatedRobot(RobotBase):
     @servo_angle.setter
     def servo_angle(self, value):
         self._servo_angle = value
+
+    @property
+    def angle_error(self):
+        return np.zeros(3)
 
     @property
     def adc_reading(self):
