@@ -210,7 +210,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         """ the potentiometer readings, 0 - 1023 """
         while self._adc_reading is None:
             pass
-        return self._adc_reading
+        return np.asarray(self._adc_reading)
 
     @property
     def target_adc_reading(self): raise ValueError
