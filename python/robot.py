@@ -68,10 +68,14 @@ class RobotBase(metaclass=abc.ABCMeta):
             config.lengths[:,np.newaxis]*directions
         )
 
-    @property 
+    @property
     def joints_stalled(self):
         return (self.adc_reading >= 680) | (self.adc_reading <= 360)
-        
+
+    @property
+    def angle_error(self):
+        return (self.adc_reading - config.adc_0)*config.rad_per_adc
+
 
 class ControlMode(enum.Enum):
     Period = object()
@@ -201,9 +205,6 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             value = value.astype(np.uint16)
         self.servo_us = value
 
-    @property
-    def angle_error(self):
-        return (self.adc_reading - config.adc_0)*config.rad_per_adc
 
     @property
     def adc_reading(self):
@@ -242,10 +243,6 @@ class SimulatedRobot(RobotBase):
     @servo_angle.setter
     def servo_angle(self, value):
         self._servo_angle = value
-
-    @property
-    def angle_error(self):
-        return np.zeros(3)
 
     @property
     def adc_reading(self):
