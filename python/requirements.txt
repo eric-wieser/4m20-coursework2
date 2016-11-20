@@ -1,3 +1,8 @@
 cobs~=1.0
 pyserial==3.2.1
+<<<<<<< HEAD
 numpy~=1.11
+=======
+numpy~=1.11
+
+>>>>>>> 2de9ee21d8a8ad3d40b8094f08f05513c722f14a
