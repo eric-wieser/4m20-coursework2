@@ -73,6 +73,7 @@ void onPacket(const uint8_t* buffer, size_t size) {
     // send back a response ping
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].setLimits(m->minMicros, m->maxMicros);
+      robot->joints[i].setAdcParams(m->adcZero[i], m->servoPerAdc[i]);
     }
   }
   else if(auto m = message_cast<const messages::ServoForce*>(buffer, size)) {

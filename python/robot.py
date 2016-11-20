@@ -108,7 +108,11 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             time.sleep(0.5)
             r.ping()
             r.ping()
-            r.config(servo_limits_us=config.servo_limits)
+            r.config(
+                servo_limits_us=config.servo_limits,
+                adc_zero=config.adc_0,
+                servo_per_adc=config.servo_per_rad * config.rad_per_adc
+            )
             try:
                 yield r
             finally:
@@ -169,8 +173,10 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         raise IOError('Never got a response ping')
 
 
-    def config(self, *, servo_limits_us):
-        msg = messages.JointConfig(servo_limits_us)
+    def config(self, *, servo_limits_us, adc_zero, servo_per_adc):
+        msg = messages.JointConfig(
+            tuple(servo_limits_us) + tuple(adc_zero) + tuple(servo_per_adc)
+        )
         #TODO: verify this went through!
         self._write_message(msg)
         self._write_message(msg)
@@ -247,6 +253,7 @@ class SimulatedRobot(RobotBase):
     @property
     def adc_reading(self):
         return self._adc_reading
+
 
     @RobotBase.angle_error.setter
     def angle_error(self, value):
