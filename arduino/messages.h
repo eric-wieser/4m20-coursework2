@@ -18,11 +18,15 @@ namespace messages {
 	struct PACKED ServoForce {
 		uint16_t adcs[3];  // desired ADC reading
 	};
+	struct PACKED ServoPosition {
+		uint16_t servo[3];  // desired servo position
+	};
 	template<> struct traits<ServoForce> : base_trait<ServoForce, 'F'>{};
 
 	struct PACKED JointConfig {
 		uint16_t minMicros;
 		uint16_t maxMicros;
+		float servo_per_adc;
 	};
 	template<> struct traits<JointConfig> : base_trait<JointConfig, 'J'>{};
 

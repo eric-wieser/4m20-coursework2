@@ -39,6 +39,7 @@ adc_0 = _adc_lims.mean(axis=1)
 #See Link 3 Data.txt for 
 adc_0[2] = 528.7845903
 rad_per_adc = np.radians(0.368583536)
+servo_per_adc = (servo_per_radian * rad_per_adc).mean()
 
 
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
@@ -59,3 +60,4 @@ if __name__ == '__main__':
 	print('servo_angle_limits', servo_angle_limits)
 	print('adc_0', adc_0)
 	print('lengths', lengths)
+	print('servo_per_adc', servo_per_adc)
