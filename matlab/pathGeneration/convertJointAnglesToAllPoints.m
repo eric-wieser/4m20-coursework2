@@ -1,4 +1,4 @@
-function [ position0, position1, position2, endPosition, reachablePoint ] = convertJointAnglesToAllPoints( jointAngles )
+function [ position0, position1, position2, endPosition, COMPosition, reachablePoint ] = convertJointAnglesToAllPoints( jointAngles , stabilityRegion)
 %CONVERTJOINTANGLESTOALLPOINTS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -39,6 +39,14 @@ position0 = E0;
 position1 = E0 + R01*E1;
 position2 =  E0 + R01*E1 + R02*E2;
 endPosition = E0 + R01*E1 + R02*E2 + R03*E3;
+
+
+%% Check if it is unstable
+m = 0.1;
+COMPosition =  ([0;l0/2] + position0+R01*[0;l1/2] + position1+R02*[0;l2/2] + position2+R03*[0;l3/2] )/4;
+if COMPosition(1) < min(stabilityRegion) || COMPosition(1) > max(stabilityRegion)
+    reachablePoint = 0;
+end
 
 
 end

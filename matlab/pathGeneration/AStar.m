@@ -1,4 +1,4 @@
-function [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold)
+function [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold, stabilityRegion)
 %ASTAR Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -19,17 +19,25 @@ function [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold)
     % by passing by that node. That value is partly known, partly heuristic.
     fScore = containers.Map('KeyType','int64', 'ValueType', 'any');
     % For the first node, that value is completely heuristic.
-    fScore(hashFunction( start)) = heuristicGoalCost(start);
+    fScore(hashFunction( start)) = heuristicGoalCost(start, stabilityRegion, stepSize);
      % The set of currently discovered nodes still to be evaluated.
     % Initially, only the start node is known.
     openSet = containers.Map('KeyType','int64', 'ValueType', 'any');
-    openSet(hashFunction(start)) = heuristicGoalCost(start);
-
+    openSet(hashFunction(start)) = heuristicGoalCost(start, stabilityRegion, stepSize);
+    
+    iterationNumber = 0;
     while size(openSet) ~= 0
+        iterationNumber = iterationNumber + 1;
         % the node in openSet having the lowest fScore[] value
         [ minKey, minVal ] = minOverSet2( openSet );
         current = minKey;
-        [ currentendPosition, ~ ] = convertJointAnglesToEndPoint( inverseHashFunction(current) );
+        
+        if mod(iterationNumber,100) == 0
+            [ currentendPosition, ~ ] = convertJointAnglesToEndPoint( inverseHashFunction(current),stabilityRegion );
+            disp(norm(currentendPosition - goal,2))
+        end
+        
+        [ currentendPosition, ~ ] = convertJointAnglesToEndPoint( inverseHashFunction(current),stabilityRegion );
         if norm(currentendPosition - goal,2) < threshold
             outputPath = reconstructPath(cameFrom, current);
             return
@@ -45,7 +53,7 @@ function [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold)
                 continue % Ignore the neighbor which is already evaluated.
             end
             % The distance from start to a neighbor
-            tentative_gScore = gScore(current) + dist_between( inverseHashFunction(current),  inverseHashFunction(neighbor));
+            tentative_gScore = gScore(current) + dist_between( inverseHashFunction(current),  inverseHashFunction(neighbor), stabilityRegion);
             newNodeFlag = 0;
             if ~isKey(openSet,neighbor ) % Discover a new node
                 newNodeFlag = 1;
@@ -57,11 +65,12 @@ function [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold)
             % This path is the best until now. Record it!
             cameFrom(neighbor) = current;
             gScore(neighbor) = tentative_gScore;
-            fScore(neighbor) = gScore(neighbor) + heuristicGoalCost( inverseHashFunction(neighbor));
+            fScore(neighbor) = gScore(neighbor) + heuristicGoalCost( inverseHashFunction(neighbor), stabilityRegion, stepSize);
             if newNodeFlag
                 openSet(neighbor) = fScore(neighbor);
             end
         end
+        
     end
     outputPath = [];
 end
