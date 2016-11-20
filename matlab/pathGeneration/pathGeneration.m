@@ -7,10 +7,7 @@ stepSize = 0.1;
 threshold = 0.05;
 goal = [0.2;0];
 startJointAngles = [1;1;1];
-profile on
 [ outputPath ] = AStar(startJointAngles, goal, stepSize, threshold);
-profile off
-profile viewer
 vertexCollector = [];
 for vertexIndex = 1:length(outputPath)
     thisVert = inverseHashFunction( outputPath{ vertexIndex} );
