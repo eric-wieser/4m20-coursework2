@@ -248,6 +248,11 @@ class SimulatedRobot(RobotBase):
     def adc_reading(self):
         return self._adc_reading
 
+    @RobotBase.angle_error.setter
+    def angle_error(self, value):
+        """ for debugging """
+        self._adc_reading = value / config.rad_per_adc + config.adc_0
+
     @property
     def target_adc_reading(self): raise NotImplementedError
     @target_adc_reading.setter
