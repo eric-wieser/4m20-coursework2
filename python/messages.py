@@ -33,19 +33,23 @@ class Message(tuple):
 
 class ServoPulse(Message):
 	code = b'C'
-	fmt = Struct('HHH')
+	fmt = Struct('<HHH')
 
 class ServoForce(Message):
 	code = b'F'
-	fmt = Struct('HHH')
+	fmt = Struct('<HHH')
+
+class ServoPosition(Message):
+	code = b'T'
+	fmt = Struct('<HHH')
 
 class JointConfig(Message):
 	code = b'J'
-	fmt = Struct('HH')
+	fmt = Struct('<HHHHHfff')
 
 class Sensor(Message):
 	code = b'S'
-	fmt = Struct('HHH')
+	fmt = Struct('<HHH')
 
 class Ping(Message):
 	code = b'P'
@@ -53,7 +57,7 @@ class Ping(Message):
 
 class IMUScaled(Message):
 	code = b'I'
-	fmt = Struct('fffffffff')
+	fmt = Struct('<fffffffff')
 
 	acc  = property(lambda s: s[0:3])
 	gyro = property(lambda s: s[3:6])
@@ -65,3 +69,10 @@ if __name__ == '__main__':
 
 	m2 = Message.deserialize(s)
 	assert m == m2
+
+
+	x = JointConfig((550, 2300, 520, 527, 528, 3.5629741813333333, 3.5384019456, 3.4319222574222223))
+	s = x.serialize()
+	print(s, len(s), JointConfig.fmt.size)
+	s = s[:-12] + s[-12:-8][::-1] + s[-8:-4][::-1] + s[-4:][::-1]
+	print(Message.deserialize(s))

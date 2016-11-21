@@ -65,6 +65,18 @@ void onPacket(const uint8_t* buffer, size_t size) {
       robot->joints[i].write(m->micros[i]);
     }
   }
+  else if(auto m = message_cast<const messages::ServoForce*>(buffer, size)) {
+    // enable force control on the joints
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].writeForce(m->adcs[i]);
+    }
+  }
+  else if(auto m = message_cast<const messages::ServoPosition*>(buffer, size)) {
+    // enable position control on the joints
+    for(int i = 0; i < robot->N; i++) {
+      robot->joints[i].writeFeedback(m->micros[i]);
+    }
+  }
   else if(/* auto m =*/ message_cast<const messages::Ping*>(buffer, size)) {
     // send back a response ping
     pingPending += 1;
@@ -73,12 +85,7 @@ void onPacket(const uint8_t* buffer, size_t size) {
     // send back a response ping
     for(int i = 0; i < robot->N; i++) {
       robot->joints[i].setLimits(m->minMicros, m->maxMicros);
-    }
-  }
-  else if(auto m = message_cast<const messages::ServoForce*>(buffer, size)) {
-    // enable force control on the joints
-    for(int i = 0; i < robot->N; i++) {
-      robot->joints[i].writeForce(m->adcs[i]);
+      robot->joints[i].setAdcParams(m->adcZero[i], m->servoPerAdc[i]);
     }
   }
   else {
