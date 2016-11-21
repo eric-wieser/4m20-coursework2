@@ -117,14 +117,16 @@ public:
 
     else if(mode_ == POSITION_FEEDBACK) {
       const uint32_t UPDATE_DT = 2;
-      const float K = 0.5;
+      const float K = .1;
+      const float K_relax = .01;
 
       // only update every 50ms, to avoid oscillation
       if(ms < lastUpdate_ + UPDATE_DT) return;
 
       // simple proportional force controller
-      int err = targetPeriod_ - (period_ - readError());
-      write_(period_ + K*err);
+      float err = targetPeriod_ - (period_ - readError());
+      float relax = targetPeriod_ - period_;
+      write_(period_ + K*err + K_relax * relax);
 
       lastUpdate_ = ms;
     }

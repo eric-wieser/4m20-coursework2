@@ -20,6 +20,11 @@ namespace messages {
 	};
 	template<> struct traits<ServoForce> : base_trait<ServoForce, 'F'>{};
 
+	struct PACKED ServoPosition {
+		uint16_t micros[3];  // desired servo position
+	};
+	template<> struct traits<ServoPosition> : base_trait<ServoPosition, 'T'>{};
+
 	struct PACKED JointConfig {
 		uint16_t minMicros;
 		uint16_t maxMicros;

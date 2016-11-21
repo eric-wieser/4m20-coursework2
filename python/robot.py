@@ -80,6 +80,7 @@ class RobotBase(metaclass=abc.ABCMeta):
 class ControlMode(enum.Enum):
     Period = object()
     Torque = object()
+    Position = object()
 
 class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
     """ The low-level messaging-level operations of the robot """
@@ -111,7 +112,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             r.config(
                 servo_limits_us=config.servo_limits,
                 adc_zero=config.adc_0,
-                servo_per_adc=config.servo_per_rad * config.rad_per_adc
+                servo_per_adc=config.servo_per_radian * config.rad_per_adc
             )
             try:
                 yield r
@@ -145,7 +146,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         elif isinstance(msg, messages.IMUScaled):
             pass
         elif isinstance(msg, messages.ServoPulse):
-            if self._mode == ControlMode.Torque:
+            if self._mode in (ControlMode.Torque, ControlMode.Position):
                 self._servo_us = np.asarray(msg)
         elif isinstance(msg, messages.Ping):
             self._ping_recvd = True
@@ -175,11 +176,12 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
 
     def config(self, *, servo_limits_us, adc_zero, servo_per_adc):
         msg = messages.JointConfig(
-            tuple(servo_limits_us) + tuple(adc_zero) + tuple(servo_per_adc)
+            tuple(servo_limits_us) + tuple(adc_zero.astype(np.uint16)) + tuple(servo_per_adc)
         )
         #TODO: verify this went through!
         self._write_message(msg)
         self._write_message(msg)
+
 
     # servo control
     @property
@@ -228,6 +230,14 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         self._mode = ControlMode.Torque
         self._write_message(messages.ServoForce(value))
 
+    @property
+    def target_servo_position(self): raise ValueError
+    @target_servo_position.setter
+    def target_servo_position(self, value):
+        """ use position control to try and hit the desired angle """
+        value = value.astype(np.uint16)
+        self._mode = ControlMode.Position
+        self._write_message(messages.ServoPosition(value))
 
 class SimulatedRobot(RobotBase):
     """
