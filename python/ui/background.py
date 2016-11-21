@@ -56,7 +56,7 @@ class BackgroundTK:
             self._tk.quit()
             self._tk = None
 
-    def __enter__(self):
+    def __enter__(self, ):
         """
         Start the thread in the background, waiting for the gui to be built
         before proceeding.
@@ -79,3 +79,21 @@ class BackgroundTK:
         self._thread.join()
         self.open = False
         self._tk = None
+
+    def with_(self, mainprog):
+        def thread():
+            self._started.wait()
+            if self._exc:
+                return
+            try:
+                mainprog(self)
+            except Exception as e:
+                self._exc = e
+            if self.open:
+                self._tk.after(0, self.__bg_stop)
+
+        t = threading.Thread(target=thread)
+        t.start()
+        self.__bg_run()
+        if self._exc:
+            raise self._exc
