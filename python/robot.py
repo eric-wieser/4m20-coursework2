@@ -137,7 +137,7 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             msg = messages.Message.deserialize(raw)
         except (messages.DecodeError, cobs.DecodeError) as e:
             # not much we can do about garbage messages, so log and continue
-            print(traceback.format_exception_only(type(e), e)[0].strip())
+            print(traceback.format_exception_only(type(e), e)[0].strip(), repr(packet))
             return
 
         # update state, depending on type of message
