@@ -5,6 +5,8 @@
 
 import numpy as np
 from config import lengths
+from config import servo_angle_limits as lims
+
 
 def get_sympy_jacobian():
 	from sympy import Symbol, diff, sin, cos
@@ -68,10 +70,48 @@ def get_servo_angles(r):
 	q = q % (2*np.pi)
 
 	#print(f(q)) # checking that end effector is in the right location for the new q
-
-	# remember q[0][0] is phi1, q[1][0] is phi2, q[2][0] is phi3, q[3][0] is phi4
 	return q[0:]
 
-if __name__ == '__main__':
-	print(get_servo_angles([0.3,0.3]))
-	print("Jacobian is", get_sympy_jacobian())
+
+def get_servo_angles_for_list(r, q): #q is just q2, q3, q4
+	r = np.asarray(r)
+
+	for i in range (1,200):
+		q = q + np.dot(pJ(q),(r-f(q)))
+	q = q % (2*np.pi)
+	for i in range(0,3):
+		if q[i]>np.pi:
+			q[i] = q[i]-2*(np.pi)
+	return q[0:]
+
+
+listr = np.array([[0.2, 0.2], [0.3, 0.3], [0.35, 0.35], [0.4, 0.35]])
+qstart = np.array([0.0, 0.0, 0.0])
+
+def list_of_angles(listr, qstart): # list r needs to be a (2 x length) np array. 
+	# qstart needs to be a np array with phi2, phi3 and phi4 in it (not including phi1 as it is assumed to be 0)
+	l = listr.shape[0] # number of locations for the loop
+
+	qreturn = np.zeros((l, 3))
+
+	if listr.shape[1]!= 2:
+		print('listr is in the wrong format - needs to be a 2 by (length) np array')
+	if qstart.shape != (3,):
+		print('qstart is in the wrong format - needs to be a np array with 3 elements in it')
+	# start the algorithm off with qstart as the starting angles
+	qreturn[0,:] = get_servo_angles_for_list(listr[0], qstart)
+
+	for i in range(1,l): 	# make sure that it can get there
+		qreturn[i,:] = get_servo_angles_for_list(listr[i], qreturn[(i-1),:]) # start off each run at the robot is currently
+		if qreturn[i,0]<lims[0,0] or qreturn[i,0]>lims[0,1]:
+			print('at index %d (python indexing starting at 0), q2 is out of range' % i)
+		if qreturn[i,1]<lims[1,0] or qreturn[i,1]>lims[1,1]:
+			print('at index %d (python indexing starting at 0), q3 is out of range'% i)
+		if qreturn[i,2]<lims[2,0] or qreturn[i,2]>lims[2,1]:
+			print('at index %d (python indexing starting at 0), q4 is out of range'% i)
+	return qreturn
+print(list_of_angles(listr,qstart))
+
+#if __name__ == '__main__':
+#	print(get_servo_angles([0.3,0.3]))
+#	print("Jacobian is", get_sympy_jacobian())
