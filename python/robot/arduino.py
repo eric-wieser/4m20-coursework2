@@ -1,17 +1,17 @@
 import contextlib
-import threading
-import warnings
-import time
 import enum
+import time
 import traceback
-import abc
+import warnings
 
-import serial.threaded
 from cobs import cobs
 import numpy as np
+import serial
+import serial.threaded
 
-import messages
+from . import base
 import config
+import messages
 
 def _find_arduino_port() -> str:
     import serial.tools.list_ports
@@ -22,67 +22,50 @@ def _find_arduino_port() -> str:
     raise IOError("Could not find an arduino - is it plugged in?")
 
 
-class RobotBase(metaclass=abc.ABCMeta):
-    @classmethod
-    @abc.abstractmethod
-    def connect(cls): pass
-
-    @property
-    @abc.abstractmethod
-    def servo_angle(self): raise NotImplementedError
-    @servo_angle.setter
-    def servo_angle(self, value): raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def adc_reading(self): raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def target_adc_reading(self, value): raise NotImplementedError
-
-    @property
-    def link_angles(self):
-        res = np.empty(4)
-        res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(self.joint_angles)
-        return res
-
-    @property
-    def joint_angles(self):
-        s_angle = 0
-        if self.servo_angle is not None:
-            s_angle += self.servo_angle
-        if self.adc_reading is not None:
-            s_angle -= self.angle_error
-        return s_angle
-
-    @property
-    def joint_positions(self):
-        angles = self.link_angles
-        directions = np.stack([
-            np.cos(angles),
-            np.sin(angles)
-        ], axis=1)
-        return np.add.accumulate(
-            config.lengths[:,np.newaxis]*directions
-        )
-
-    @property
-    def joints_stalled(self):
-        return (self.adc_reading >= 680) | (self.adc_reading <= 360)
-
-    @property
-    def angle_error(self):
-        return (self.adc_reading - config.adc_0)*config.rad_per_adc
-
-
 class ControlMode(enum.Enum):
     Period = object()
     Torque = object()
     Position = object()
 
-class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
+
+class State(base.State):
+    def __init__(self, servo_us, adc_reading):
+        self._adc_reading = np.empty(3, np.uint16)
+        self._servo_us = np.empty(3, np.uint16)
+
+        self._servo_us[:] = servo_us
+        self._adc_reading[:] = adc_reading
+
+    @base.State.adc_reading.getter
+    def adc_reading(self):
+        return self._adc_reading
+
+    @property
+    def servo_us(self):
+        """
+        the pulse widths of the servos, in us
+        `None` means the servo is off.
+        """
+        return self._servo_us
+    @servo_us.setter
+    def servo_us(self, value):
+        value = np.asarray(value, dtype=np.uint16)
+        clipped = np.clip(value, *config.servo_limits)
+        self._servo_us[...] = np.where(value == np.uint16(-1), -1, clipped)
+
+    # servo microsseconds to radians
+    @base.State.servo_angle.getter
+    def servo_angle(self):
+        """ return the servo angle in radians """
+        angle = (self.servo_us - config.servo_0) / config.servo_per_radian
+        return np.where(self.servo_us == np.uint16(-1), np.nan, angle)
+    @servo_angle.setter
+    def servo_angle(self, value):
+        us = value * config.servo_per_radian + config.servo_0
+        self.servo_us = np.where(np.isnan(value), -1, us.astype(np.uint16))
+
+
+class Robot(base.Robot, serial.threaded.Packetizer):
     """ The low-level messaging-level operations of the robot """
 
     @classmethod
@@ -117,12 +100,12 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
             try:
                 yield r
             finally:
-                r.servo_us = None
+                r.servo_us = -1
 
     def __init__(self):
         """ Create a new robot. This is called internally by ReaderThread """
         super().__init__()
-        self._servo_us = None
+        self._servo_us = np.full(3, fill_value=-1, dtype=np.uint16)
         self._adc_reading = None
         self._ping_recvd = False
         self._mode = ControlMode.Period
@@ -182,44 +165,31 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         self._write_message(msg)
         self._write_message(msg)
 
-
-    # servo control
-    @property
-    def servo_us(self):
-        """
-        the pulse widths of the servos, in us
-        `None` means the servo is off.
-        """
-        return self._servo_us
-
-    @servo_us.setter
-    def servo_us(self, value):
-        if value is None:
-            value = (0xffff,)*3
+    def _write_us(self, value):
+        self._servo_us = value
         self._mode = ControlMode.Period
         self._write_message(messages.ServoPulse(value))
         self._servo_us = np.clip(np.array(value, dtype=np.uint16), *config.servo_limits)
 
+    # servo control
     @property
-    def servo_angle(self):
-        """ return the servo angle in radians """
-        if self.servo_us is None:
-            return None
-        return (self.servo_us - config.servo_0) / config.servo_per_radian
-    @servo_angle.setter
-    def servo_angle(self, value):
-        if value is not None:
-            value = value * config.servo_per_radian + config.servo_0
-            value = value.astype(np.uint16)
-        self.servo_us = value
-
-
-    @property
-    def adc_reading(self):
-        """ the potentiometer readings, 0 - 1023 """
+    def state(self):
         while self._adc_reading is None:
             pass
-        return np.asarray(self._adc_reading)
+        return State(servo_us=self._servo_us, adc_reading=self._adc_reading)
+
+
+    @property
+    def servo_us(self): return self.state.servo_us
+    @servo_us.setter
+    def servo_us(self, value):
+        self._write_us(self.state.update(servo_us=value).servo_us)
+
+    @property
+    def servo_angle(self): return self.state.servo_angle
+    @servo_angle.setter
+    def servo_angle(self, value):
+        self._write_us(self.state.update(servo_angle=value).servo_us)
 
     @property
     def target_adc_reading(self): raise ValueError
@@ -238,42 +208,3 @@ class ArduinoRobot(RobotBase, serial.threaded.Packetizer):
         value = value.astype(np.uint16)
         self._mode = ControlMode.Position
         self._write_message(messages.ServoPosition(value))
-
-class SimulatedRobot(RobotBase):
-    """
-    A simulated version of the robot that requires no connected hardware
-    """
-    @classmethod
-    @contextlib.contextmanager
-    def connect(cls):
-        yield cls()
-
-    def __init__(self):
-        self._adc_reading = np.ones(3) * 512
-        self._servo_angle = np.zeros(3)
-
-    @property
-    def servo_angle(self):
-        return self._servo_angle
-
-    @servo_angle.setter
-    def servo_angle(self, value):
-        self._servo_angle = value
-
-    @property
-    def adc_reading(self):
-        return self._adc_reading
-
-
-    @RobotBase.angle_error.setter
-    def angle_error(self, value):
-        """ for debugging """
-        self._adc_reading = value / config.rad_per_adc + config.adc_0
-
-    @property
-    def target_adc_reading(self): raise NotImplementedError
-    @target_adc_reading.setter
-    def target_adc_reading(self, value): raise NotImplementedError
-
-
-Robot = ArduinoRobot

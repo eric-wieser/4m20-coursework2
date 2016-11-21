@@ -49,10 +49,14 @@ class GeometryVisualizer(tk.Canvas):
 
     def __update_once(self):
         last = np.zeros(2)
-        poss = self.robot.joint_positions
-        angles = self.robot.link_angles
-        forces = self.robot.angle_error
-        stalled = self.robot.joints_stalled
+
+        # cache the state in case it changes while we're rendering
+        s = self.robot.state
+
+        poss = s.joint_positions
+        angles = s.link_angles
+        forces = s.angle_error
+        stalled = s.joints_stalled
 
         for link, pos in zip(self.links, poss):
             coords = np.array([last, pos])
@@ -63,11 +67,11 @@ class GeometryVisualizer(tk.Canvas):
             last = pos
 
         for i, joint in enumerate(self.joints):
-            posi = poss[i] + self.FORCE_SIZE*np.array([
+            pos = poss[i] + self.FORCE_SIZE*np.array([
                 [-1, -1],
                 [1, 1]
             ])
-            coords = self._to_screen_coords(posi)
+            coords = self._to_screen_coords(pos)
             self.coords(joint, *coords.ravel())
             extent = -np.degrees(forces[i])
             start = -np.degrees(angles[i+1])
