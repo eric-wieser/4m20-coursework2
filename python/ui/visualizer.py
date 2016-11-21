@@ -12,7 +12,7 @@ class GeometryVisualizer(tk.Canvas):
 
         self.origin = np.zeros(2)
 
-        props = dict(fill='red', width=self.SCALE * 0.025)
+        props = dict(fill='#ff8040', width=self.SCALE * 0.025)
 
         self.links = [
             self.create_line(0, 10, 20, 30, **props),
@@ -69,8 +69,8 @@ class GeometryVisualizer(tk.Canvas):
             ])
             coords = self._to_screen_coords(posi)
             self.coords(joint, *coords.ravel())
-            extent = np.degrees(forces[i])
-            start = -np.degrees(angles[i])
+            extent = -np.degrees(forces[i])
+            start = -np.degrees(angles[i+1])
 
             if extent < 0:
                 start += 5
