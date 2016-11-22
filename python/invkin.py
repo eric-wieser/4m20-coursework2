@@ -76,7 +76,7 @@ def get_servo_angles(r):
 def get_servo_angles_for_list(r, q): #q is just q2, q3, q4
 	r = np.asarray(r)
 
-	for i in range (1,200):
+	for i in range (1,1000):
 		q = q + np.dot(pJ(q),(r-f(q)))
 	q = q % (2*np.pi)
 	for i in range(0,3):
@@ -104,14 +104,26 @@ def list_of_angles(listr, qstart): # list r needs to be a (2 x length) np array.
 	for i in range(1,l): 	# make sure that it can get there
 		qreturn[i,:] = get_servo_angles_for_list(listr[i], qreturn[(i-1),:]) # start off each run at the robot is currently
 		if qreturn[i,0]<lims[0,0] or qreturn[i,0]>lims[0,1]:
-			print('at index %d (python indexing starting at 0), q2 is out of range' % i)
+			print('at index %d (python indexing starting at 0), q2 (%r) is out of range' % (i,qreturn[i,0]))
 		if qreturn[i,1]<lims[1,0] or qreturn[i,1]>lims[1,1]:
-			print('at index %d (python indexing starting at 0), q3 is out of range'% i)
+			print('at index %d (python indexing starting at 0), q3 (%r) is out of range'% (i,qreturn[i,1]))
 		if qreturn[i,2]<lims[2,0] or qreturn[i,2]>lims[2,1]:
-			print('at index %d (python indexing starting at 0), q4 is out of range'% i)
+			print('at index %d (python indexing starting at 0), q4 (%r) is out of range'% (i,qreturn[i,2]))
 	return qreturn
-print(list_of_angles(listr,qstart))
 
-#if __name__ == '__main__':
-#	print(get_servo_angles([0.3,0.3]))
-#	print("Jacobian is", get_sympy_jacobian())
+def heart():
+	heartr = np.zeros((104, 2))
+	i = 0
+	for t in np.arange(0.1, 2*np.pi, 0.06):
+		x = 16*np.power(np.sin(t),3)
+		y = 13*np.cos(t) - 5*np.cos(2*t) - 2*np.cos(3*t) - np.cos(4*t)
+		heartr[i] = np.array([-0.329+0.0048*x, 0.24+0.007*y])
+		i = i+1
+	return heartr
+
+qheart = list_of_angles(heart(),qstart)
+
+
+if __name__ == '__main__':
+	print(get_servo_angles([0.3,0.3]))
+	print("Jacobian is", get_sympy_jacobian())
