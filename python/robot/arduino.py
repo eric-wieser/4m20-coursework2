@@ -119,8 +119,12 @@ class Robot(base.Robot, serial.threaded.Packetizer):
             raw = cobs.decode(packet)
             msg = messages.Message.deserialize(raw)
         except (messages.DecodeError, cobs.DecodeError) as e:
-            # not much we can do about garbage messages, so log and continue
-            print(traceback.format_exception_only(type(e), e)[0].strip(), repr(packet))
+            if packet.startswith(b'!DEBUG'):
+                packet = packet[6:]
+                print("Debug: " + packet.decode('utf8'))
+            else:
+                # not much we can do about garbage messages, so log and continue
+                print(traceback.format_exception_only(type(e), e)[0].strip(), repr(packet))
             return
 
         # update state, depending on type of message
@@ -201,10 +205,10 @@ class Robot(base.Robot, serial.threaded.Packetizer):
         self._write_message(messages.ServoForce(value))
 
     @property
-    def target_servo_position(self): raise ValueError
-    @target_servo_position.setter
-    def target_servo_position(self, value):
+    def target_joint_angle(self): raise ValueError
+    @target_joint_angle.setter
+    def target_joint_angle(self, value):
         """ use position control to try and hit the desired angle """
-        value = value.astype(np.uint16)
+        value = self.state.update(servo_angle=value).servo_us
         self._mode = ControlMode.Position
         self._write_message(messages.ServoPosition(value))

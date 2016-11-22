@@ -4,6 +4,7 @@ from tkinter import ttk
 import config
 import time
 from ui import GeometryVisualizer
+import numpy as np
 
 class SliderGui:
     """
@@ -12,20 +13,22 @@ class SliderGui:
     def __init__(self, start=[1500] * config.N):
         # create the window
         root = tk.Tk()
-        root.resizable(True, False)
+        root.resizable(True, True)
         root.minsize(800, 0)
 
         self._pot_sliders = []
         self._root = root
-        self._servo_values = start
+        self._servo_values = np.asarray(start)
 
         # create the servo sliders
         servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
         servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vars = [tk.IntVar() for i in range(config.N)]
         for i in range(config.N):
             scale = tk.Scale(servo_sliders,
-                from_=config.servo_limits[0], to=config.servo_limits[1],
-                tickinterval=250, orient=tk.HORIZONTAL, takefocus=1,
+                from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
+                tickinterval=10, orient=tk.HORIZONTAL, takefocus=1,
+                variable = vars[i],
                 command=lambda evt, i=i: self._servo_changed(evt, i))
             scale.pack(fill=tk.BOTH)
             scale.set(self._servo_values[i])
@@ -40,12 +43,33 @@ class SliderGui:
             scale.pack(fill=tk.BOTH)
             self._pot_sliders.append(scale)
 
-        self._on_servo_changed = lambda values: None
+        # add manual entry fields
+        servo_fields = ttk.LabelFrame(root, text="Target servo angles")
+        servo_fields.pack(padx=10, pady=10, side=tk.BOTTOM, expand=True)
+        for v in vars:
+            e = tk.Entry(servo_fields, textvariable=v)
+            e.pack(fill=tk.BOTH, side=tk.LEFT)
+        # go button
+        def button_pressed():
+            self._servo_values[:] = [v.get() for v in vars]
+            self._updated()
+        b = tk.Button(servo_fields, text='Go!', command=button_pressed)
+        b.pack(fill=tk.BOTH, side=tk.LEFT)
+
+        # position feedback toggle
+        self.feedback_v = tk.IntVar()
+        c = tk.Checkbutton(root, text="Use position control", variable=self.feedback_v,command=lambda : self._updated())
+        c.pack(side=tk.LEFT)
+
+        self._on_servo_changed = lambda values,use_feedback: None
 
     def _servo_changed(self, val, i):
         """ called when a single slider value changes"""
         self._servo_values[i] = int(val)
-        self.on_servo_changed(self._servo_values)
+        self._updated()
+
+    def _updated(self):
+        self.on_servo_changed(self._servo_values, self.feedback_v.get())
 
     def _update_ui(self, pot_readings):
         """ Update the ui with the given potentiometer readings """
@@ -64,7 +88,7 @@ class SliderGui:
     @on_servo_changed.setter
     def on_servo_changed(self, callback):
         self._on_servo_changed = callback
-        callback(self._servo_values)
+        self._updated()
 
 
 if __name__ == '__main__':
@@ -73,12 +97,15 @@ if __name__ == '__main__':
 
     # Run a simple test of sending a packet, and getting some responses
     with Robot.connect() as robot:
-        gui = SliderGui(start=config.servo_0.copy())
-        vis = GeometryVisualizer(gui._root, robot=robot, width=200, height=200)
+        gui = SliderGui(start=(60,60,60))
+        vis = GeometryVisualizer(gui._root, robot=robot, width=500, height=500)
         vis.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        def send_it(v):
-            robot.servo_us = v
+        def send_it(v, feedback):
+            if feedback:
+                robot.target_joint_angle = np.radians(v)
+            else:
+                robot.servo_angle = np.radians(v)
         gui.on_servo_changed = send_it
 
         # we have to mess around here with .after to keep the UI thread responsive
