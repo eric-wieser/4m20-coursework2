@@ -16,6 +16,7 @@ def get_sympy_jacobian():
 	qq3 = Symbol('qq3')
 	qq4 = Symbol('qq4')
 
+	lengths = [Symbol('lengths[{}]'.format(i)) for i in range(4)]
 
 	x = -(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4))
 	y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)
