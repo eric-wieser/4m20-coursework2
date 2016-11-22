@@ -25,8 +25,8 @@ class SliderGui:
         servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
         for i in range(config.N):
             scale = tk.Scale(servo_sliders,
-                from_=config.servo_limits[0], to=config.servo_limits[1],
-                tickinterval=250, orient=tk.HORIZONTAL, takefocus=1,
+                from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
+                tickinterval=10, orient=tk.HORIZONTAL, takefocus=1,
                 command=lambda evt, i=i: self._servo_changed(evt, i))
             scale.pack(fill=tk.BOTH)
             scale.set(self._servo_values[i])
@@ -77,12 +77,12 @@ if __name__ == '__main__':
 
     # Run a simple test of sending a packet, and getting some responses
     with Robot.connect() as robot:
-        gui = SliderGui(start=config.servo_0.copy())
+        gui = SliderGui(start=(60,60,60))
         vis = GeometryVisualizer(gui._root, robot=robot, width=200, height=200)
         vis.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         def send_it(v):
-            robot.servo_us = v
+            robot.servo_angle = np.radians(v)
         gui.on_servo_changed = send_it
 
         # we have to mess around here with .after to keep the UI thread responsive
