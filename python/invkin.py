@@ -132,3 +132,15 @@ if __name__ == '__main__':
 	np.testing.assert_allclose(f(q), [0.3, 0.3], rtol=0.001)
 
 	print("Jacobian is", get_sympy_jacobian())
+
+	try:
+		from matplotlib import pyplot as plt
+	except ImportError:
+		import warnings
+		warnings.warn("Can't plot the heart :(")
+	else:
+		r = heart()
+		fig, ax = plt.subplots()
+		ax.plot(r[:,0], r[:,1])
+		ax.axis('equal')
+		plt.show()
