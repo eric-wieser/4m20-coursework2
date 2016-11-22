@@ -41,7 +41,11 @@ class SliderGui:
             scale.pack(fill=tk.BOTH)
             self._pot_sliders.append(scale)
 
-        self._on_servo_changed = lambda values: None
+        self.feedback_v = tk.IntVar()
+        c = tk.Checkbutton(root, text="Use position control", variable=self.feedback_v,command=lambda : self._updated())
+        c.pack(side=tk.LEFT)
+
+        self._on_servo_changed = lambda values,use_feedback: None
 
     def _servo_changed(self, val, i):
         """ called when a single slider value changes"""
@@ -49,7 +53,7 @@ class SliderGui:
         self._updated()
 
     def _updated(self):
-        self.on_servo_changed(self._servo_values)
+        self.on_servo_changed(self._servo_values, self.feedback_v.get())
 
     def _update_ui(self, pot_readings):
         """ Update the ui with the given potentiometer readings """
@@ -81,8 +85,11 @@ if __name__ == '__main__':
         vis = GeometryVisualizer(gui._root, robot=robot, width=200, height=200)
         vis.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        def send_it(v):
-            robot.servo_angle = np.radians(v)
+        def send_it(v, feedback):
+            if feedback:
+                robot.target_joint_angle = np.radians(v)
+            else:
+                robot.servo_angle = np.radians(v)
         gui.on_servo_changed = send_it
 
         # we have to mess around here with .after to keep the UI thread responsive
