@@ -23,10 +23,12 @@ class SliderGui:
         # create the servo sliders
         servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
         servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vars = [tk.IntVar() for i in range(config.N)]
         for i in range(config.N):
             scale = tk.Scale(servo_sliders,
                 from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
                 tickinterval=10, orient=tk.HORIZONTAL, takefocus=1,
+                variable = vars[i],
                 command=lambda evt, i=i: self._servo_changed(evt, i))
             scale.pack(fill=tk.BOTH)
             scale.set(self._servo_values[i])
@@ -41,6 +43,20 @@ class SliderGui:
             scale.pack(fill=tk.BOTH)
             self._pot_sliders.append(scale)
 
+        # add manual entry fields
+        servo_fields = ttk.LabelFrame(root, text="Target servo angles")
+        servo_fields.pack(padx=10, pady=10, side=tk.BOTTOM, expand=True)
+        for v in vars:
+            e = tk.Entry(servo_fields, textvariable=v)
+            e.pack(fill=tk.BOTH, side=tk.LEFT)
+        # go button
+        def button_pressed():
+            self._servo_values[:] = [v.get() for v in vars]
+            self._updated()
+        b = tk.Button(servo_fields, text='Go!', command=button_pressed)
+        b.pack(fill=tk.BOTH, side=tk.LEFT)
+
+        # position feedback toggle
         self.feedback_v = tk.IntVar()
         c = tk.Checkbutton(root, text="Use position control", variable=self.feedback_v,command=lambda : self._updated())
         c.pack(side=tk.LEFT)
@@ -82,7 +98,7 @@ if __name__ == '__main__':
     # Run a simple test of sending a packet, and getting some responses
     with Robot.connect() as robot:
         gui = SliderGui(start=(60,60,60))
-        vis = GeometryVisualizer(gui._root, robot=robot, width=200, height=200)
+        vis = GeometryVisualizer(gui._root, robot=robot, width=500, height=500)
         vis.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         def send_it(v, feedback):
