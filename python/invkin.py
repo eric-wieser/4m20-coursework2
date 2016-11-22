@@ -49,40 +49,24 @@ def f(qq):
 	#y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)
 	return np.array([-(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4)), lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)], dtype=np.float64)
 
-def get_servo_angles(r):
+
+def get_servo_angles(r, q=np.zeros(3), tol=0.001):
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
-
-	# r is the desired coordinate of the foot that is not the base foot (the end effector)
-	r = np.asarray(r)
-	# change starting angles
-	q1 = 0
-	q2 = 2.0
-	q3 = 2.0
-	q4 = 2.0
-	q = np.array([q2, q3, q4], dtype=np.float64)
-
-	# find set of angles (q) to get to r
-	for i in range(1,200):
-		q = q + np.dot(pJ(q),(r-f(q)))
-
-	# change q so that it is between 0 and 2pi
-	q = q % (2*np.pi)
-
-	#print(f(q)) # checking that end effector is in the right location for the new q
-	return q[0:]
-
-
-def get_servo_angles_for_list(r, q): #q is just q2, q3, q4
 	r = np.asarray(r)
 
-	for i in range (1,1000):
-		q = q + np.dot(pJ(q),(r-f(q)))
+	# gradient descent until convergence
+	while True:
+		diff = r - f(q)
+		q = q + pJ(q) @ diff
+		if np.linalg.norm(diff) < tol:
+			break
+
+	# normalize angles
 	q = q % (2*np.pi)
-	for i in range(0,3):
-		if q[i]>np.pi:
-			q[i] = q[i]-2*(np.pi)
-	return q[0:]
+	q[q > np.pi] -= 2*np.pi
+
+	return q
 
 
 listr = np.array([[0.2, 0.2], [0.3, 0.3], [0.35, 0.35], [0.4, 0.35]])
@@ -99,10 +83,10 @@ def list_of_angles(listr, qstart): # list r needs to be a (2 x length) np array.
 	if qstart.shape != (3,):
 		print('qstart is in the wrong format - needs to be a np array with 3 elements in it')
 	# start the algorithm off with qstart as the starting angles
-	qreturn[0,:] = get_servo_angles_for_list(listr[0], qstart)
+	qreturn[0,:] = get_servo_angles(listr[0], qstart)
 
 	for i in range(1,l): 	# make sure that it can get there
-		qreturn[i,:] = get_servo_angles_for_list(listr[i], qreturn[(i-1),:]) # start off each run at the robot is currently
+		qreturn[i,:] = get_servo_angles(listr[i], qreturn[(i-1),:]) # start off each run at the robot is currently
 		if qreturn[i,0]<lims[0,0] or qreturn[i,0]>lims[0,1]:
 			print('at index %d (python indexing starting at 0), q2 (%r) is out of range' % (i,qreturn[i,0]))
 		if qreturn[i,1]<lims[1,0] or qreturn[i,1]>lims[1,1]:
@@ -143,5 +127,7 @@ qheart = np.concatenate((qheart,qpadding), axis=0) # list of angles to draw a he
 
 
 if __name__ == '__main__':
-	print(get_servo_angles([0.3,0.3]))
+	q = get_servo_angles([0.3,0.3])
+	np.testing.assert_allclose(f(q), [0.3, 0.3], rtol=0.001)
+
 	print("Jacobian is", get_sympy_jacobian())
