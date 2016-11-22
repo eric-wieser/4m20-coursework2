@@ -12,7 +12,7 @@ class SliderGui:
     def __init__(self, start=[1500] * config.N):
         # create the window
         root = tk.Tk()
-        root.resizable(True, False)
+        root.resizable(True, True)
         root.minsize(800, 0)
 
         self._pot_sliders = []
