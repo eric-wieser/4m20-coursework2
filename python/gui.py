@@ -45,6 +45,9 @@ class SliderGui:
     def _servo_changed(self, val, i):
         """ called when a single slider value changes"""
         self._servo_values[i] = int(val)
+        self._updated()
+
+    def _updated(self):
         self.on_servo_changed(self._servo_values)
 
     def _update_ui(self, pot_readings):
@@ -64,7 +67,7 @@ class SliderGui:
     @on_servo_changed.setter
     def on_servo_changed(self, callback):
         self._on_servo_changed = callback
-        callback(self._servo_values)
+        self._updated()
 
 
 if __name__ == '__main__':
