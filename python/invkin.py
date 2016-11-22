@@ -121,7 +121,25 @@ def heart():
 		i = i+1
 	return heartr
 
-qheart = list_of_angles(heart(),qstart)
+def remove_discontinuity(qlist):
+	difference = qlist[0] - qlist[-1]
+	num_extra_steps = int(np.ceil(max(difference/0.15)))
+	step_difference = difference/num_extra_steps
+	qpadding = np.zeros((num_extra_steps,3))
+	qpadding[0] = qlist[-1] + step_difference
+	for i in range(1, num_extra_steps):
+		qpadding[i] = qpadding[i-1] + step_difference
+		if qpadding[i,0]<lims[0,0] or qpadding[i,0]>lims[0,1]:
+			print('at index %d (python indexing starting at 0), q2 (%r) is out of range' % (i,qpadding[i,0]))
+		if qpadding[i,1]<lims[1,0] or qpadding[i,1]>lims[1,1]:
+			print('at index %d (python indexing starting at 0), q3 (%r) is out of range'% (i,qpadding[i,1]))
+		if qpadding[i,2]<lims[2,0] or qpadding[i,2]>lims[2,1]:
+			print('at index %d (python indexing starting at 0), q4 (%r) is out of range'% (i,qpadding[i,2]))
+	return qpadding
+
+qheart = list_of_angles(heart(),qstart) # list of angles to draw a heart with discontinuity
+qpadding = remove_discontinuity(qheart) # list of angles to get from qheart[-1] back to qheart[0]
+qheart = np.concatenate((qheart,qpadding), axis=0) # list of angles to draw a heart with discontinuity removed
 
 
 if __name__ == '__main__':
