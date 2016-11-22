@@ -4,6 +4,7 @@ from tkinter import ttk
 import config
 import time
 from ui import GeometryVisualizer
+import numpy as np
 
 class SliderGui:
     """
@@ -17,7 +18,7 @@ class SliderGui:
 
         self._pot_sliders = []
         self._root = root
-        self._servo_values = start
+        self._servo_values = np.asarray(start)
 
         # create the servo sliders
         servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
