@@ -26,7 +26,7 @@ class Robot(base.Robot):
         yield cls()
 
     def __init__(self):
-        self._adc_reading = np.ones(3) * 512
+        self._adc_reading = config.adc_0
         self._servo_angle = np.zeros(3)
 
     @property
