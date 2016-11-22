@@ -141,6 +141,9 @@ if __name__ == '__main__':
 	else:
 		r = heart()
 		fig, ax = plt.subplots()
-		ax.plot(r[:,0], r[:,1])
+		ax.plot(r[:,0], r[:,1], label='Intended')
+		r2 = np.array([f(q) for q in qheart])
+		ax.plot(r2[:,0], r2[:,1], label='Calculated')
+		ax.legend()
 		ax.axis('equal')
 		plt.show()
