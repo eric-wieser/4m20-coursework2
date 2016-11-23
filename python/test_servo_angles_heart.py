@@ -11,7 +11,7 @@ from robot import Robot
 from robot import SimulatedRobot as Robot
 
 
-from invkin import qheart
+from trajectories import qheart
 
 with Robot.connect() as r:
 	gui =  ui.basic(r) 
