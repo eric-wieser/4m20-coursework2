@@ -57,6 +57,8 @@ class State:
                 raise AttributeError
         return self
 
+    lengths = config.lengths
+
     def __init__(self, joint_angles):
         self._joint_angles = np.asarray(joint_angles)
 
@@ -68,9 +70,10 @@ class State:
     @property
     def link_angles(self):
         """ The angles of the links, measured relative to link 0 """
-        res = np.empty(4)
-        res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(self.joint_angles)
+        ja = self.joint_angles
+        res = np.empty(4, dtype=ja.dtype)
+        res[0] = 0*ja[0] # first link is clamped - use ja[0] just to get the type right
+        res[1:] = np.cumsum(ja)
         return res
 
     @property
@@ -82,8 +85,18 @@ class State:
             np.sin(angles)
         ], axis=1)
         return np.add.accumulate(
-            config.lengths[:,np.newaxis]*directions
+            self.lengths[:,np.newaxis]*directions
         )
+
+    @property
+    def joint_jacobians(self):
+        angles = self.link_angles
+        directions = np.stack([
+            -np.sin(angles),
+            np.cos(angles)
+        ], axis=1)
+        per_link_jacobians = np.triu(self.lengths).T[:,None,:]*directions[...,None]
+        return np.cumsum(per_link_jacobians, axis=0)
 
 class StateWithSprings(State):
     """

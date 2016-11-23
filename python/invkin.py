@@ -6,25 +6,38 @@
 import numpy as np
 from config import lengths
 from config import servo_angle_limits as lims
+from robot.base import State
 
+def check_jacobian():
+	"""
+	Verify the jacobian computed in robot.base.State is correct, by comparing
+	it with the symbolic jacobian of the positions.
 
-def get_sympy_jacobian():
-	from sympy import Symbol, diff, sin, cos
-	# Calculating J and pinvJ using symbolic algebra - only have to do this if J & pinvJ need to be recalculated
-	qq1 = Symbol('qq1')
-	qq2 = Symbol('qq2')
-	qq3 = Symbol('qq3')
-	qq4 = Symbol('qq4')
+	We can't check the positions, because we have nothing to check against.
+	"""
+	import sympy as sy
+	# this is a hack to make np.cos(sympy thing) work properly
+	sy.Basic.cos = lambda x: sy.cos(x)
+	sy.Basic.sin = lambda x: sy.sin(x)
 
-	lengths = [Symbol('lengths[{}]'.format(i)) for i in range(4)]
+	# construct the angles and lengths as symbols
+	angles = [sy.Symbol(r'\phi_{}'.format(i)) for i in [1, 2, 3]]
+	lengths = np.array([sy.Symbol(r'l_{}'.format(i)) for i in [1, 2, 3, 4]])
 
-	x = -(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4))
-	y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)
+	# make a state object with them
+	s = State(joint_angles=angles).update(lengths=lengths)
+	end_effector = s.joint_positions[-1]
+	end_jacobian = s.joint_jacobians[-1][:,1:]
 
-	J1 =[diff(x,qq2), diff(x,qq3), diff(x,qq4)]
-	J2 =[diff(y,qq2), diff(y,qq3), diff(y,qq4)]
+	# find the jacobian symbolically and otherwise
+	expected = np.asarray(sy.Matrix(end_effector).jacobian(angles))
+	actual = end_jacobian
 
-	return np.array([J1, J2])
+	# compare them
+	assert np.all(actual == expected)
+	print("Jacobian is:")
+	print(repr(actual))
+
 
 # for this problem we want theta=0 to be the y axis, so just rotate things
 rot90 = np.array([
@@ -33,17 +46,8 @@ rot90 = np.array([
 ])
 
 def pJ(qq):
-	from numpy import sin, cos
-	qq1 = 0
-	qq2 = qq[0]
-	qq3 = qq[1]
-	qq4 = qq[2]
-	#J1 = [-lengths[0]*cos(qq1) - lengths[1]*cos(qq1 + qq2) - lengths[2]*cos(qq1 + qq2 + qq3) - lengths[3]*cos(qq1 + qq2 + qq3 + qq4), -lengths[1]*cos(qq1 + qq2) - lengths[2]*cos(qq1 + qq2 + qq3) - lengths[3]*cos(qq1 + qq2 + qq3 + qq4), -lengths[2]*cos(qq1 + qq2 + qq3) - lengths[3]*cos(qq1 + qq2 + qq3 + qq4), -lengths[3]*cos(qq1 + qq2 + qq3 + qq4)]
-	#J2 = [-lengths[0]*sin(qq1) - lengths[1]*sin(qq1 + qq2) - lengths[2]*sin(qq1 + qq2 + qq3) - lengths[3]*sin(qq1 + qq2 + qq3 + qq4), -lengths[1]*sin(qq1 + qq2) - lengths[2]*sin(qq1 + qq2 + qq3) - lengths[3]*sin(qq1 + qq2 + qq3 + qq4), -lengths[2]*sin(qq1 + qq2 + qq3) - lengths[3]*sin(qq1 + qq2 + qq3 + qq4), -lengths[3]*sin(qq1 + qq2 + qq3 + qq4)]
-	J = np.array([
-		[ -0.148*cos(qq1 + qq2) - 0.149*cos(qq1 + qq2 + qq3) - 0.139*cos(qq1 + qq2 + qq3 + qq4), -0.149*cos(qq1 + qq2 + qq3) - 0.139*cos(qq1 + qq2 + qq3 + qq4), -0.139*cos(qq1 + qq2 + qq3 + qq4)],
-		[ -0.148*sin(qq1 + qq2) - 0.149*sin(qq1 + qq2 + qq3) - 0.139*sin(qq1 + qq2 + qq3 + qq4), -0.149*sin(qq1 + qq2 + qq3) - 0.139*sin(qq1 + qq2 + qq3 + qq4), -0.139*sin(qq1 + qq2 + qq3 + qq4)]
-	])
+	# we want the jacobian of the last link, wrt all but the first link angle
+	J = rot90 @ State(joint_angles=qq).joint_jacobians[-1][:,1:]
 	return np.linalg.pinv(J)
 
 def f(qq):
@@ -126,10 +130,11 @@ qheart = np.concatenate((qheart,qpadding), axis=0) # list of angles to draw a he
 
 
 if __name__ == '__main__':
+	check_jacobian()
+
 	q = get_servo_angles([0.3,0.3])
 	np.testing.assert_allclose(f(q), [0.3, 0.3], rtol=0.001)
 
-	print("Jacobian is", get_sympy_jacobian())
 
 	try:
 		from matplotlib import pyplot as plt
