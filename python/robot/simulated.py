@@ -5,16 +5,8 @@ import numpy as np
 from . import base
 import config
 
-class State(base.State):
-    def __init__(self, servo_angle, adc_reading):
-        self._adc_reading = np.asarray(adc_reading)
-        self._servo_angle = np.asarray(servo_angle)
-
-    @base.State.servo_angle.getter
-    def servo_angle(self): return self._servo_angle
-
-    @base.State.adc_reading.getter
-    def adc_reading(self): return self._adc_reading
+class State(base.StateWithSprings):
+    pass
 
 class Robot(base.Robot):
     """

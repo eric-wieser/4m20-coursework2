@@ -28,7 +28,7 @@ class ControlMode(enum.Enum):
     Position = object()
 
 
-class State(base.State):
+class State(base.StateWithSprings):
     def __init__(self, servo_us, adc_reading, imu_reading):
         self._adc_reading = np.empty(3, np.uint16)
         self._servo_us = np.empty(3, np.uint16)
@@ -36,10 +36,6 @@ class State(base.State):
         self._servo_us[:] = servo_us
         self._adc_reading[:] = adc_reading
         self._acc = imu_reading.acc
-
-    @base.State.adc_reading.getter
-    def adc_reading(self):
-        return self._adc_reading
 
     @property
     def servo_us(self):
@@ -55,7 +51,7 @@ class State(base.State):
         self._servo_us[...] = np.where(value == np.uint16(-1), -1, clipped)
 
     # servo microsseconds to radians
-    @base.State.servo_angle.getter
+    @base.StateWithSprings.servo_angle.getter
     def servo_angle(self):
         """ return the servo angle in radians """
         angle = (self.servo_us - config.servo_0) / config.servo_per_radian
@@ -80,7 +76,7 @@ class State(base.State):
         else:
             return np.arctan2(-g[0], -g[1])
 
-    @property
+    @base.StateWithSprings.link_angles.getter
     def link_angles(self):
         offset = self.imu_angle
         a = base.State.link_angles.fget(self)
