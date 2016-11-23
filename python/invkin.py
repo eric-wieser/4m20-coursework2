@@ -26,6 +26,12 @@ def get_sympy_jacobian():
 
 	return np.array([J1, J2])
 
+# for this problem we want theta=0 to be the y axis, so just rotate things
+rot90 = np.array([
+	[0, -1],
+	[1, 0]
+])
+
 def pJ(qq):
 	from numpy import sin, cos
 	qq1 = 0
@@ -41,15 +47,7 @@ def pJ(qq):
 	return np.linalg.pinv(J)
 
 def f(qq):
-	from numpy import sin, cos
-	qq1 = 0
-	qq2 = qq[0]
-	qq3 = qq[1]
-	qq4 = qq[2]
-	#x = -(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4))
-	#y = lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)
-	return np.array([-(lengths[0]*sin(qq1) + lengths[1]*sin(qq1+qq2) + lengths[2]*sin(qq1+qq2+qq3)+ lengths[3]*sin(qq1+qq2+qq3+qq4)), lengths[0]*cos(qq1) + lengths[1]*cos(qq1+qq2) + lengths[2]*cos(qq1+qq2+qq3) + lengths[3]*cos(qq1+qq2+qq3+qq4)], dtype=np.float64)
-
+	return rot90 @ State(joint_angles=qq).joint_positions[-1]
 
 def get_servo_angles(r, q=np.zeros(3), tol=0.001):
 	# returns a set of servo values to send to the robot
