@@ -1,10 +1,44 @@
 import tkinter as tk
+import functools
 
 import numpy as np
+import weakref
 
-class GeometryVisualizer(tk.Canvas):
+class Bunch:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+class Component:
+    def __init__(self, owner, id):
+        self._owner = weakref.ref(owner)
+        self._id = id
+
+    def update(self, coords, **props):
+        self._owner().coords(self._id, *coords)
+        self._owner().itemconfig(self._id, **props)
+
+    def __repr__(self):
+        return "Component({!r}, {!r})".format(self._owner(), self._id)
+
+class BetterCanvas(tk.Canvas):
+    def __wrap_create(self, f):
+        @functools.wraps(f)
+        def wrapped(*args, **kwargs):
+            return Component(self, f(*args, **kwargs))
+        return wrapped
+
+    def __getattribute__(self, k):
+        v = super(BetterCanvas, self).__getattribute__(k)
+        if k.startswith('create_'):
+            v = self.__wrap_create(v)
+        return v
+
+class GeometryVisualizer(BetterCanvas):
     SCALE = 400 # pixels per meter
     FORCE_SIZE = 0.05
+    HINGE_RADIUS = 0.0125
+
     def __init__(self, master, *, robot, **kwargs):
         super().__init__(master, **kwargs)
         self.robot = robot
@@ -15,23 +49,30 @@ class GeometryVisualizer(tk.Canvas):
         props = dict(fill='#ff8040', width=self.SCALE * 0.025)
 
         self.links = [
-            self.create_line(0, 10, 20, 30, **props),
-            self.create_line(0, 0, 200, 0, **props),
-            self.create_line(0, 0, 200, 0, **props),
-            self.create_line(0, 0, 200, 0, **props),
+            self.create_line(0, 0, 0, 0, **props),
+            self.create_line(0, 0, 0, 0, **props),
+            self.create_line(0, 0, 0, 0, **props),
+            self.create_line(0, 0, 0, 0, **props),
         ]
 
         self.joints = [
-            self.create_arc(-
-                -self.FORCE_SIZE,
-                -self.FORCE_SIZE,
-                self.FORCE_SIZE,
-                self.FORCE_SIZE,
-                start=0,
-                extent=0,
-                outline='green',
-                width=self.SCALE * 0.0125,
-                style='arc'
+            Bunch(
+                force_arc=self.create_arc(-
+                    -self.FORCE_SIZE,
+                    -self.FORCE_SIZE,
+                    self.FORCE_SIZE,
+                    self.FORCE_SIZE,
+                    start=0,
+                    extent=0,
+                    outline='green',
+                    width=self.SCALE * 0.0125,
+                    style='arc'
+                ),
+                hinge=self.create_oval(
+                    0, 0, 0, 0,
+                    outline='black',
+                    fill='white'
+                )
             )
             for i in range(3)
         ]
@@ -63,7 +104,7 @@ class GeometryVisualizer(tk.Canvas):
             coords = self._to_screen_coords(coords)
             if np.isnan(coords).any():
                 return
-            self.coords(link, *coords.ravel())
+            link.update(coords.ravel())
             last = pos
 
         for i, joint in enumerate(self.joints):
@@ -72,7 +113,6 @@ class GeometryVisualizer(tk.Canvas):
                 [1, 1]
             ])
             coords = self._to_screen_coords(pos)
-            self.coords(joint, *coords.ravel())
             extent = -np.degrees(forces[i])
             start = -np.degrees(angles[i+1])
 
@@ -82,14 +122,20 @@ class GeometryVisualizer(tk.Canvas):
             else:
                 start -= 5
                 extent += 10
-            self.itemconfig(joint,
+
+            hinge_pos = poss[i] + self.HINGE_RADIUS*np.array([
+                [-1, -1],
+                [1, 1]
+            ])
+            hinge_coords = self._to_screen_coords(hinge_pos)
+            joint.hinge.update(hinge_coords.ravel())
+            joint.force_arc.update(
+                coords.ravel(),
                 start=start,
-                extent=extent
+                extent=extent,
+                outline='red' if stalled[i] else 'green'
             )
-            if stalled[i]:
-                self.itemconfig(joint, outline='red')
-            else:
-                self.itemconfig(joint, outline='green')
+            print(start, extent)
 
     def __update(self):
         self.__update_once()
