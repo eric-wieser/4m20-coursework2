@@ -45,10 +45,9 @@ rot90 = np.array([
 	[1, 0]
 ])
 
-def pJ(qq):
+def J(qq):
 	# we want the jacobian of the last link, wrt all but the first link angle
-	J = rot90 @ State(joint_angles=qq).joint_jacobians[-1][:,1:]
-	return np.linalg.pinv(J)
+	return rot90 @ State(joint_angles=qq).joint_jacobians[-1][:,1:]
 
 def f(qq):
 	return rot90 @ State(joint_angles=qq).joint_positions[-1]
@@ -57,13 +56,18 @@ def get_servo_angles(r, q=np.zeros(3), tol=0.001):
 	# returns a set of servo values to send to the robot
 	# the inputs are the coordinates for the desired location of the end effector
 	r = np.asarray(r)
-
 	# gradient descent until convergence
 	while True:
 		diff = r - f(q)
 		if np.linalg.norm(diff) < tol:
 			break
-		q = q + pJ(q) @ diff
+
+		jq = J(q)
+		pjq = np.linalg.pinv(jq)
+
+		# https://homes.cs.washington.edu/~todorov/courses/cseP590/06_JacobianMethods.pdf#page=13
+		dq = pjq @ diff - (np.eye(jq.shape[1]) - pjq @ jq) @ q
+		q = q + dq
 
 	# normalize angles
 	q = q % (2*np.pi)
