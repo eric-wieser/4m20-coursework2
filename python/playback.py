@@ -8,9 +8,13 @@ import ui
 from scipy.interpolate import interp1d
 #from robot import SimulatedRobot as Robot
 
+SPEED = 0.4
+
 gaitsequence = np.loadtxt('onestep.csv',delimiter=',')
 gaitsequence = np.concatenate((gaitsequence, gaitsequence[0:1]))
-dts = gaitsequence[:,0]
+dts = gaitsequence[:,0] * SPEED
+
+
 angles = gaitsequence[:,1:]
 period = np.sum(dts[:-1])
 times = np.zeros(len(angles))
@@ -33,5 +37,6 @@ with Robot.connect() as r, ui.basic(r) as gui:
     while True:
         t = (time.time() - start_time) % period
         r.target_joint_angle = np.radians(angle_for(t))
+        time.sleep(0.02)
         if not gui.open:
             raise SystemExit
