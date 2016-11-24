@@ -37,8 +37,13 @@ class Robot(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def target_adc_reading(self, value): raise NotImplementedError
 
+class State:
+    """
+    Base class for storing robot state and derived properties
 
-class State(metaclass=abc.ABCMeta):
+    This version does not know about the springs at the joint, and works in
+    terms of only joint angles
+    """
     def update(self, **kwargs):
         """
         Convenience method to update a property of the state and return the modified value
@@ -52,39 +57,23 @@ class State(metaclass=abc.ABCMeta):
                 raise AttributeError
         return self
 
-    @property
-    @abc.abstractmethod
-    def servo_angle(self):
-        """ Angle of each servo, in radians """
-        raise NotImplementedError
+    lengths = config.lengths
+
+    def __init__(self, joint_angles):
+        self._joint_angles = np.asarray(joint_angles)
 
     @property
-    @abc.abstractmethod
-    def adc_reading(self):
-        """ Reading from the potentiometer in arbritary units """
-        raise NotImplementedError
-
-    @property
-    def joints_stalled(self):
-        """ Boolean array, of whether the joint is at maximum torque """
-        return (self.adc_reading >= 680) | (self.adc_reading <= 360)
-
-    @property
-    def angle_error(self):
-        """ Difference in angle between the joint and the servo, calculated from the force """
-        return (self.adc_reading - config.adc_0)*config.rad_per_adc
-
-    @property
-    def joint_angles(self):
-        """ Overall joint angle between two adjacent links """
-        return self.servo_angle - self.angle_error
+    def joint_angles(self): return self._joint_angles
+    @joint_angles.setter
+    def joint_angles(self, value): self._joint_angles = value
 
     @property
     def link_angles(self):
         """ The angles of the links, measured relative to link 0 """
-        res = np.empty(4)
-        res[0] = 0 # first link is clamped
-        res[1:] = np.cumsum(self.joint_angles)
+        ja = self.joint_angles
+        res = np.empty(4, dtype=ja.dtype)
+        res[0] = 0*ja[0] # first link is clamped - use ja[0] just to get the type right
+        res[1:] = np.cumsum(ja)
         return res
 
     @property
@@ -96,5 +85,53 @@ class State(metaclass=abc.ABCMeta):
             np.sin(angles)
         ], axis=1)
         return np.add.accumulate(
-            config.lengths[:,np.newaxis]*directions
+            self.lengths[:,np.newaxis]*directions
         )
+
+    @property
+    def joint_jacobians(self):
+        angles = self.link_angles
+        directions = np.stack([
+            -np.sin(angles),
+            np.cos(angles)
+        ], axis=1)
+        per_link_jacobians = np.triu(self.lengths).T[:,None,:]*directions[...,None]
+        return np.cumsum(per_link_jacobians, axis=0)
+
+class StateWithSprings(State):
+    """
+    An abstract class that represents the state of teh robot including the
+    complexities of the springs.
+    """
+    def __init__(self, servo_angle, adc_reading):
+        self._adc_reading = np.asarray(adc_reading)
+        self._servo_angle = np.asarray(servo_angle)
+
+    @property
+    def servo_angle(self): return self._servo_angle
+    @servo_angle.setter
+    def servo_angle(self, value): self._servo_angle = value
+
+    @property
+    def adc_reading(self): return self._adc_reading
+    @adc_reading.setter
+    def adc_reading(self, value): self._adc_reading = value
+
+    @property
+    def joints_stalled(self):
+        """ Boolean array, of whether the joint is at maximum torque """
+        return (self.adc_reading >= 680) | (self.adc_reading <= 360)
+
+    @property
+    def angle_error(self):
+        """ Difference in angle between the joint and the servo, calculated from the force """
+        return (self.adc_reading - config.adc_0)*config.rad_per_adc
+
+    # this overrides the base class implementation
+    @State.joint_angles.getter
+    def joint_angles(self):
+        """ Overall joint angle between two adjacent links """
+        return self.servo_angle - self.angle_error
+    @joint_angles.setter
+    def joint_angles(self, value):
+        self.servo_angle = value + self.angle_error

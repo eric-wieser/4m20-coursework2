@@ -28,17 +28,14 @@ class ControlMode(enum.Enum):
     Position = object()
 
 
-class State(base.State):
-    def __init__(self, servo_us, adc_reading):
+class State(base.StateWithSprings):
+    def __init__(self, servo_us, adc_reading, imu_reading):
         self._adc_reading = np.empty(3, np.uint16)
         self._servo_us = np.empty(3, np.uint16)
 
         self._servo_us[:] = servo_us
         self._adc_reading[:] = adc_reading
-
-    @base.State.adc_reading.getter
-    def adc_reading(self):
-        return self._adc_reading
+        self._acc = imu_reading.acc
 
     @property
     def servo_us(self):
@@ -54,7 +51,7 @@ class State(base.State):
         self._servo_us[...] = np.where(value == np.uint16(-1), -1, clipped)
 
     # servo microsseconds to radians
-    @base.State.servo_angle.getter
+    @base.StateWithSprings.servo_angle.getter
     def servo_angle(self):
         """ return the servo angle in radians """
         angle = (self.servo_us - config.servo_0) / config.servo_per_radian
@@ -64,6 +61,29 @@ class State(base.State):
         us = value * config.servo_per_radian + config.servo_0
         self.servo_us = np.where(np.isnan(value), -1, us.astype(np.uint16))
 
+
+    @property
+    def gravity(self):
+        return self._acc / np.linalg.norm(self._acc)
+
+    @property
+    def imu_angle(self):
+        g = self.gravity
+        in_plane = np.hypot(g[0], g[1])
+        plane_angle = np.arccos(in_plane)
+        if np.abs(plane_angle) > np.radians(60):
+            return np.nan
+        else:
+            return np.arctan2(-g[0], -g[1])
+
+    @base.StateWithSprings.link_angles.getter
+    def link_angles(self):
+        offset = self.imu_angle
+        a = base.State.link_angles.fget(self)
+        if not np.isnan(offset):
+            return a - a[1] + self.imu_angle
+        else:
+            return a
 
 class Robot(base.Robot, serial.threaded.Packetizer):
     """ The low-level messaging-level operations of the robot """
@@ -119,15 +139,19 @@ class Robot(base.Robot, serial.threaded.Packetizer):
             raw = cobs.decode(packet)
             msg = messages.Message.deserialize(raw)
         except (messages.DecodeError, cobs.DecodeError) as e:
-            # not much we can do about garbage messages, so log and continue
-            print(traceback.format_exception_only(type(e), e)[0].strip(), repr(packet))
+            if packet.startswith(b'!DEBUG'):
+                packet = packet[6:]
+                print("Debug: " + packet.decode('utf8'))
+            else:
+                # not much we can do about garbage messages, so log and continue
+                print(traceback.format_exception_only(type(e), e)[0].strip(), repr(packet))
             return
 
         # update state, depending on type of message
         if isinstance(msg, messages.Sensor):
             self._adc_reading = msg
         elif isinstance(msg, messages.IMUScaled):
-            pass
+            self._imu_reading = msg
         elif isinstance(msg, messages.ServoPulse):
             if self._mode in (ControlMode.Torque, ControlMode.Position):
                 self._servo_us = np.asarray(msg)
@@ -176,7 +200,9 @@ class Robot(base.Robot, serial.threaded.Packetizer):
     def state(self):
         while self._adc_reading is None:
             pass
-        return State(servo_us=self._servo_us, adc_reading=self._adc_reading)
+        while self._imu_reading is None:
+            pass
+        return State(servo_us=self._servo_us, adc_reading=self._adc_reading, imu_reading=self._imu_reading)
 
 
     @property
