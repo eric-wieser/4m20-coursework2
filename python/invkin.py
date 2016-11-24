@@ -61,9 +61,9 @@ def get_servo_angles(r, q=np.zeros(3), tol=0.001):
 	# gradient descent until convergence
 	while True:
 		diff = r - f(q)
-		q = q + pJ(q) @ diff
 		if np.linalg.norm(diff) < tol:
 			break
+		q = q + pJ(q) @ diff
 
 	# normalize angles
 	q = q % (2*np.pi)
@@ -98,4 +98,4 @@ if __name__ == '__main__':
 	check_jacobian()
 
 	q = get_servo_angles([0.3,0.3])
-	np.testing.assert_allclose(f(q), [0.3, 0.3], rtol=0.001)
+	np.testing.assert_allclose(f(q), [0.3, 0.3], atol=0.001, rtol=0)
