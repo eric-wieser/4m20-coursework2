@@ -2,12 +2,12 @@ import time
 import tkinter as tk
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from robot import Robot
-import ui
-from scipy.interpolate import interp1d
 #from robot import SimulatedRobot as Robot
-
+from logger import Logger
+import ui
 SPEED = 0.4
 
 gaitsequence = np.loadtxt('onestep.csv',delimiter=',')
@@ -33,10 +33,17 @@ angle_for = interp1d(times, angles.T)
 with Robot.connect() as r, ui.basic(r) as gui:
     r.target_joint_angle = angles[0]
     time.sleep(2)
+    logger = Logger(r)
     start_time = time.time()
     while True:
-        t = (time.time() - start_time) % period
-        r.target_joint_angle = np.radians(angle_for(t))
+        t = time.time() - start_time
+        t_offset = t % period
+        target = np.radians(angle_for(t_offset))
+
+        r.target_joint_angle = target
         time.sleep(0.02)
+        logger.update()
         if not gui.open:
-            raise SystemExit
+            break
+
+logger.dump('recording.pickle')

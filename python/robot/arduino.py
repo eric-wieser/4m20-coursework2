@@ -129,6 +129,7 @@ class Robot(base.Robot, serial.threaded.Packetizer):
         self._adc_reading = None
         self._ping_recvd = False
         self._mode = ControlMode.Period
+        self._target_joint_angle = np.zeros(3)
 
     def handle_packet(self, packet: bytes):
         """
@@ -227,10 +228,12 @@ class Robot(base.Robot, serial.threaded.Packetizer):
         self._write_message(messages.ServoForce(value))
 
     @property
-    def target_joint_angle(self): raise ValueError
+    def target_joint_angle(self): return self._target_joint_angle
     @target_joint_angle.setter
     def target_joint_angle(self, value):
         """ use position control to try and hit the desired angle """
-        value = self.state.update(servo_angle=value).servo_us
+        _target_state = self.state.update(servo_angle=value)
+        self._target_joint_angle = _target_state.servo_angle
+        value = _target_state.servo_us
         self._mode = ControlMode.Position
         self._write_message(messages.ServoPosition(value))
