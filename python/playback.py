@@ -46,4 +46,4 @@ with Robot.connect() as r, ui.basic(r) as gui:
         if not gui.open:
             break
 
-logger.dump('recording.pickle')
+logger.dump('walking.pickle')
