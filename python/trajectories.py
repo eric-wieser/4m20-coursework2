@@ -3,13 +3,13 @@ import numpy as np
 import invkin
 from config import servo_angle_limits as lims
 
-def heart():
+def heart(center=np.array([-0.329, 0.24])):
 	heartr = np.zeros((104, 2))
 	i = 0
 	for t in np.arange(0.1, 2*np.pi, 0.06):
 		x = 16*np.power(np.sin(t),3)
 		y = 13*np.cos(t) - 5*np.cos(2*t) - 2*np.cos(3*t) - np.cos(4*t)
-		heartr[i] = np.array([-0.329+0.0048*x, 0.24+0.007*y])
+		heartr[i] = center + np.array([0.0048*x, 0.007*y])
 		i = i+1
 	return heartr
 
