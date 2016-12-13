@@ -29,16 +29,17 @@ lengths = np.array([
 # that should be held. By repeating the experiment with the setup upsidedown,
 # we should get two torques that sum to zero, giving us the reading
 # corresponding to zero torque
-_adc_lims = np.array([
+_adc_zero = np.array([
 	[515, 525],
 	[455, 600],
 	[519, 544]
 ])
-adc_0 = _adc_lims.mean(axis=1)
+adc_0 = _adc_zero.mean(axis=1)
 
 #See Link 3 Data.txt for 
 adc_0[2] = 528.7845903
 rad_per_adc = np.radians(0.368583536)
+adc_lims = (360, 680)
 
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
 com = lengths / 2
