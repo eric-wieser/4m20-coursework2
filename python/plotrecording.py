@@ -11,7 +11,7 @@ import sys
 if len(sys.argv) > 1:
 	fname = sys.argv[1]
 else:
-	fname = 'recording.pickle'
+	fname = 'walking.pickle'
 
 with open(fname, 'rb') as f:
 	data = pickle.load(f)
