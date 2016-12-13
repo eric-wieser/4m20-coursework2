@@ -54,9 +54,12 @@ for arr in [servo_0, servo_per_radian, servo_angle_limits, adc_0, com, masses, l
 	arr.setflags(write=False)
 
 if __name__ == '__main__':
-	print('servo_0', servo_0)
-	print('servo_per_radian', servo_per_radian)
-	print('servo_angle_limits', servo_angle_limits)
-	print('adc_0', adc_0)
-	print('lengths', lengths)
-	print('servo_per_adc', servo_per_adc)
+	print('Config')
+	print('------')
+	print('servo_0:', servo_0)
+	print('servo_per_radian:', servo_per_radian)
+	print('servo_angle_limits:', servo_angle_limits)
+	print('adc_0:', adc_0)
+	print('rad_per_adc:', rad_per_adc)
+	print('adc_lims:', adc_lims)
+	print('lengths:', lengths)
