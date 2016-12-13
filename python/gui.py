@@ -23,11 +23,12 @@ class SliderGui:
         # create the servo sliders
         servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
         servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        vars = [tk.IntVar() for i in range(config.N)]
+        vars = [tk.DoubleVar() for i in range(config.N)]
         for i in range(config.N):
             scale = tk.Scale(servo_sliders,
                 from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
                 tickinterval=10, orient=tk.HORIZONTAL, takefocus=1,
+                resolution=0.5,
                 variable = vars[i],
                 command=lambda evt, i=i: self._servo_changed(evt, i))
             scale.pack(fill=tk.BOTH)
@@ -65,7 +66,7 @@ class SliderGui:
 
     def _servo_changed(self, val, i):
         """ called when a single slider value changes"""
-        self._servo_values[i] = int(val)
+        self._servo_values[i] = float(val)
         self._updated()
 
     def _updated(self):
