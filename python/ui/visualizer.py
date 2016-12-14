@@ -135,7 +135,6 @@ class GeometryVisualizer(BetterCanvas):
                 extent=extent,
                 outline='red' if stalled[i] else 'green'
             )
-            print(start, extent)
 
     def __update(self):
         self.__update_once()
