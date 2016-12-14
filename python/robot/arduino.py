@@ -194,7 +194,6 @@ class Robot(base.Robot, serial.threaded.Packetizer):
         self._servo_us = value
         self._mode = ControlMode.Period
         self._write_message(messages.ServoPulse(value))
-        self._servo_us = np.clip(np.array(value, dtype=np.uint16), *config.servo_limits)
 
     # servo control
     @property
