@@ -82,7 +82,7 @@ class GeometryVisualizer(BetterCanvas):
     def on_resize(self, event):
         self.origin = np.array([
              float(event.width), float(event.height)
-        ]) * np.array([0.1, 0.5])
+        ]) * np.array([0.5, 0.5])
         self.__update_once()
 
     def _to_screen_coords(self, coords):

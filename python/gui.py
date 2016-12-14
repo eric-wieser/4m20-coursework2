@@ -1,10 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
+from contextlib import contextmanager
 
 import config
 import time
 from ui import GeometryVisualizer
 import numpy as np
+
+@contextmanager
+def frame(parent, text=""):
+    if text:
+        f = ttk.LabelFrame(parent, text=text)
+    else:
+        f = ttk.Frame(parent)
+    yield f
 
 class SliderGui:
     """
@@ -20,47 +29,54 @@ class SliderGui:
         self._root = root
         self._servo_values = np.asarray(start)
 
+        controls = ttk.Frame(root)
+
         # create the servo sliders
-        servo_sliders = ttk.LabelFrame(root, text="Servo pulse widths")
-        servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        vars = [tk.DoubleVar() for i in range(config.N)]
-        for i in range(config.N):
-            scale = tk.Scale(servo_sliders,
-                from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
-                tickinterval=10, orient=tk.HORIZONTAL, takefocus=1,
-                resolution=0.5,
-                variable = vars[i],
-                command=lambda evt, i=i: self._servo_changed(evt, i))
-            scale.pack(fill=tk.BOTH)
-            scale.set(self._servo_values[i])
+        with frame(controls, text="Servo angles") as servo_sliders:
+            vars = [tk.DoubleVar() for i in range(config.N)]
+            for i in range(config.N):
+                scale = tk.Scale(servo_sliders,
+                    from_=np.degrees(config.servo_angle_limits[i,0]), to=np.degrees(config.servo_angle_limits[i,1]),
+                    tickinterval=30, orient=tk.HORIZONTAL, takefocus=1,
+                    resolution=0.5,
+                    variable = vars[i],
+                    command=lambda evt, i=i: self._servo_changed(evt, i))
+                scale.pack(fill=tk.BOTH)
+                scale.set(self._servo_values[i])
 
         # create the potentiometer sliders
-        pot_sliders = ttk.LabelFrame(root, text="Analog sensor readings")
-        pot_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
-        for i in range(config.N):
-            scale = tk.Scale(pot_sliders, from_=0, to=1024, tickinterval=128,
-                # state=tk.DISABLED,
-                orient=tk.HORIZONTAL)
-            scale.pack(fill=tk.BOTH)
-            self._pot_sliders.append(scale)
+        with frame(controls, text="Analog sensor readings") as pot_sliders:
+            for i in range(config.N):
+                scale = tk.Scale(pot_sliders, from_=0, to=1024, tickinterval=128,
+                    # state=tk.DISABLED,
+                    orient=tk.HORIZONTAL)
+                scale.pack(fill=tk.BOTH)
+                self._pot_sliders.append(scale)
 
         # add manual entry fields
-        servo_fields = ttk.LabelFrame(root, text="Target servo angles")
-        servo_fields.pack(padx=10, pady=10, side=tk.BOTTOM, expand=True)
-        for v in vars:
-            e = tk.Entry(servo_fields, textvariable=v)
-            e.pack(fill=tk.BOTH, side=tk.LEFT)
-        # go button
-        def button_pressed():
-            self._servo_values[:] = [v.get() for v in vars]
-            self._updated()
-        b = tk.Button(servo_fields, text='Go!', command=button_pressed)
-        b.pack(fill=tk.BOTH, side=tk.LEFT)
+        with frame(controls, text="Servo angles") as servo_fields:
+            for v in vars:
+                e = tk.Entry(servo_fields, textvariable=v)
+                e.pack(fill=tk.BOTH, side=tk.LEFT)
+            # go button
+            def button_pressed():
+                self._servo_values[:] = [v.get() for v in vars]
+                self._updated()
+            b = tk.Button(servo_fields, text='Go!', command=button_pressed)
+            b.pack(fill=tk.BOTH, side=tk.LEFT)
+
 
         # position feedback toggle
         self.feedback_v = tk.IntVar()
-        c = tk.Checkbutton(root, text="Use position control", variable=self.feedback_v,command=lambda : self._updated())
-        c.pack(side=tk.LEFT)
+        feedback_button = tk.Checkbutton(controls, text="Use position feedback", variable=self.feedback_v,command=lambda : self._updated())
+
+        # lay out the large components
+        servo_fields.pack(padx=10, pady=10, side=tk.BOTTOM, expand=True)
+        feedback_button.pack(side=tk.BOTTOM)
+        servo_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
+        pot_sliders.pack(padx=10, pady=10, side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        controls.pack(fill=tk.BOTH, side=tk.BOTTOM, expand=True)
 
         self._on_servo_changed = lambda values,use_feedback: None
 
@@ -118,4 +134,4 @@ if __name__ == '__main__':
         gui._root.mainloop()
 
         # turn off the servos when we're done
-        robot.servo_us = None
+        robot.servo_us = -1
