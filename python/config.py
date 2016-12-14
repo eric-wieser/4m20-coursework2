@@ -42,10 +42,12 @@ rad_per_adc = np.radians(0.368583536)
 
 # the limits which cannot be actively driven beyond
 adc_active_lims = np.array([
-	(425, 605),
+	(425, 590),
 	(422, 619),
 	(460, 616)
 ])
+error_active_lim = (adc_active_lims - adc_0[:,np.newaxis]) * rad_per_adc
+
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
 com = lengths / 2
 
@@ -57,7 +59,7 @@ max_torque = 0.250 * lengths[0] * 9.81
 
 # Make everything read only!
 
-for arr in [servo_0, servo_per_radian, servo_angle_limits, adc_0, com, masses, lengths]:
+for arr in [servo_0, servo_per_radian, servo_angle_limits, adc_0, com, masses, lengths, error_active_lim]:
 	arr.setflags(write=False)
 
 if __name__ == '__main__':
@@ -69,6 +71,7 @@ if __name__ == '__main__':
 	print('adc_0:', adc_0)
 	print('rad_per_adc:', rad_per_adc)
 	print('adc_active_lims:', adc_active_lims)
+	print('error_active_lim:', error_active_lim)
 	print('lengths:', lengths)
 	print('masses:', masses)
 	print('max_torque:', max_torque)
