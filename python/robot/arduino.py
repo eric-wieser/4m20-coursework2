@@ -228,7 +228,11 @@ class Robot(base.Robot, serial.threaded.Packetizer):
         self._write_message(messages.ServoForce(value))
 
     @property
-    def target_joint_angle(self): return self._target_joint_angle
+    def target_joint_angle(self):
+        if self._mode == ControlMode.Position:
+            return self._target_joint_angle
+        else:
+            return np.nan * self._target_joint_angle
     @target_joint_angle.setter
     def target_joint_angle(self, value):
         """ use position control to try and hit the desired angle """
