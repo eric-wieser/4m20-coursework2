@@ -120,7 +120,7 @@ class StateWithSprings(State):
     @property
     def joints_stalled(self):
         """ Boolean array, of whether the joint is at maximum torque """
-        return (config.adc_lims[0] >= self.adc_reading) | (self.adc_reading >= config.adc_lims[1])
+        return (config.adc_active_lims[:,0] >= self.adc_reading) | (self.adc_reading >= config.adc_active_lims[:,1])
 
     @property
     def angle_error(self):
