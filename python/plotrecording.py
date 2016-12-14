@@ -1,3 +1,4 @@
+#! python3
 """
 Pass this program a filename as the first argument
 """
@@ -28,8 +29,6 @@ for i in range(3):
 
 target_states = np.stack([State(target).joint_positions for target in data.target], axis=1)
 actual_states = np.stack([State(actual).joint_positions for actual in data.actual], axis=1)
-
-print(target_states.shape)
 
 fig, ax = plt.subplots()
 for targets, actuals in zip(target_states, actual_states):
