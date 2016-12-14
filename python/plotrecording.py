@@ -69,4 +69,12 @@ for targets, actuals in zip(target_states, actual_states):
 ax.legend()
 ax.axis('equal')
 ax.grid()
+
+fig, axs = plt.subplots(3)
+fig.suptitle('Angle-force plots: {}'.format(fname))
+for i, ax in enumerate(axs):
+	ax.plot(np.degrees(data.actual[:,i]), np.degrees(error[:,i]))
+	ax.grid()
+	ax.set(xlabel='angle / degrees', ylabel='spring angle / degrees'.format(i+1))
+
 plt.show()
