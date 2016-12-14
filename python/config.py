@@ -50,8 +50,10 @@ adc_active_lims = np.array([
 com = lengths / 2
 
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/4
-masses = np.ones(4)
+_total_mass = 0.40
+masses = _total_mass * np.ones(4) / 4
 
+max_torque = 0.250 * lengths[0] * 9.81
 
 # Make everything read only!
 
@@ -68,3 +70,5 @@ if __name__ == '__main__':
 	print('rad_per_adc:', rad_per_adc)
 	print('adc_active_lims:', adc_active_lims)
 	print('lengths:', lengths)
+	print('masses:', masses)
+	print('max_torque:', max_torque)
