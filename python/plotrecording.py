@@ -2,14 +2,52 @@
 """
 Pass this program a filename as the first argument
 """
+import sys
 import pickle
+
 import numpy as np
 import matplotlib.pyplot as plt
-from robot.base import State
 
+from robot.base import State
 import config
 
-import sys
+def add_arrow(line, direction='right', size=15, color=None, n=1):
+    """
+    add an arrow to a line.
+
+    line:       Line2D object
+    position:   x-position of the arrow. If None, mean of xdata is taken
+    direction:  'left' or 'right'
+    size:       size of the arrow in fontsize points
+    color:      if None, line color is taken.
+    """
+    if color is None:
+        color = line.get_color()
+
+    xdata = line.get_xdata()
+    ydata = line.get_ydata()
+
+    # find closest index
+    dists = np.cumsum(np.hypot(np.diff(xdata), np.diff(ydata)))
+    dists = np.concatenate(([0], dists))
+    total_dist = dists[-1]
+
+
+    for i in range(1, n+1):
+        target_dist = total_dist * i / (n+1)
+        end_ind = np.argmax(dists >= target_dist)
+        start_ind = end_ind - 1
+
+        frac = (target_dist - dists[start_ind]) / (dists[end_ind] - dists[start_ind])
+        end_x = xdata[start_ind]*(1-frac) + xdata[end_ind]*frac
+        end_y = ydata[start_ind]*(1-frac) + ydata[end_ind]*frac
+
+        line.axes.annotate('',
+            xytext=(xdata[start_ind], ydata[start_ind]),
+            xy=(end_x, end_y),
+            arrowprops=dict(arrowstyle="->", color=color),
+            size=size
+        )
 
 if len(sys.argv) > 1:
 	fname = sys.argv[1]
@@ -70,10 +108,25 @@ ax.legend()
 ax.axis('equal')
 ax.grid()
 
+
+# this data is super noisy, so filter it
+N = 11
+filt = np.ones(N) / N
+
 fig, axs = plt.subplots(3)
 fig.suptitle('Angle-force plots: {}'.format(fname))
 for i, ax in enumerate(axs):
-	ax.plot(np.degrees(data.actual[:,i]), np.degrees(error[:,i]))
+	# extract data, and smooth it
+	actual_i = data.actual[:,i]
+	error_i = error[:,i]
+	sm_actual_i = np.convolve(actual_i, filt)[N//2:][:len(actual_i)]
+	sm_error_i = np.convolve(error_i, filt)[N//2:][:len(error_i)]
+
+	# plot both
+	l, = ax.plot(np.degrees(actual_i), np.degrees(error_i), alpha=0.25)
+	l, = ax.plot(np.degrees(sm_actual_i), np.degrees(sm_error_i), color=l.get_color())
+	add_arrow(l, n=5)
+
 	ax.grid()
 	ax.set(xlabel='angle / degrees', ylabel='spring angle / degrees'.format(i+1))
 
