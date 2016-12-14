@@ -22,6 +22,16 @@ class Component:
         return "Component({!r}, {!r})".format(self._owner(), self._id)
 
 class BetterCanvas(tk.Canvas):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.bind('<Configure>', self._on_resize)
+        self._size = np.ones(2) * np.nan
+
+    def _on_resize(self, event):
+        self._size = np.array([
+             float(event.width), float(event.height)
+        ])
+
     def __wrap_create(self, f):
         @functools.wraps(f)
         def wrapped(*args, **kwargs):
@@ -42,11 +52,10 @@ class GeometryVisualizer(BetterCanvas):
     def __init__(self, master, *, robot, **kwargs):
         super().__init__(master, **kwargs)
         self.robot = robot
-        self.bind('<Configure>', self.on_resize)
-
-        self.origin = np.zeros(2)
 
         props = dict(fill='#ff8040', width=self.SCALE * 0.025)
+
+        self._mode = 'walking'
 
         self.links = [
             self.create_line(0, 0, 0, 0, **props),
@@ -77,19 +86,25 @@ class GeometryVisualizer(BetterCanvas):
             for i in range(3)
         ]
 
+        self.floor = self.create_line(0, 0, 0, 0, fill='#000000')
+
         self.__update()
 
-    def on_resize(self, event):
-        self.origin = np.array([
-             float(event.width), float(event.height)
-        ]) * np.array([0.5, 0.5])
+    def _on_resize(self, event):
+        super()._on_resize(event)
         self.__update_once()
 
     def _to_screen_coords(self, coords):
-        return self.origin + self.SCALE * coords
+        coords = np.asarray(coords)
+        if self._mode == 'walking':
+            origin = self._size * np.array([0.5, 0.9])
+        else:
+            origin = self._size * np.array([0.25, 0.5])
+        return origin + self.SCALE * coords
 
     def __update_once(self):
-        last = np.zeros(2)
+        if np.isnan(self._size).any():
+            return
 
         # cache the state in case it changes while we're rendering
         s = self.robot.state
@@ -98,6 +113,26 @@ class GeometryVisualizer(BetterCanvas):
         angles = s.link_angles
         forces = s.angle_error
         stalled = s.joints_stalled
+
+        if hasattr(s, 'imu_angle') and not np.isnan(s.imu_angle):
+            self._mode = 'walking'
+            # center x, make y positive
+            last = np.array([
+                -poss[-1,0] / 2,
+                -max(0, poss[-1,1])
+            ])
+        else:
+            self._mode = 'clamped'
+            last = np.zeros(2)
+
+        poss = poss + last
+
+
+        if self._mode == 'walking':
+            floor_c = self._to_screen_coords([0, 0])
+            self.floor.update([0, floor_c[1], self._size[0], floor_c[1]])
+        else:
+            self.floor.update([-1, -1, -1, -1])
 
         for link, pos in zip(self.links, poss):
             coords = np.array([last, pos])
