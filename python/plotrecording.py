@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from robot.base import State
 import config
+from logger import augment
 
 def add_arrow(line, direction='right', size=15, color=None, n=1):
     """
@@ -57,39 +58,21 @@ else:
 with open(fname, 'rb') as f:
 	data = pickle.load(f)
 
-error = data.servo - data.actual
+# add all the extra calculated fields
+aug = augment(data)
+
 error_bounds = config.error_active_lim
-
-in_bounds = (error_bounds[:,0] < error) & (error < error_bounds[:,1])
-
-def stretch_over(data, is_valid, axis=0):# normalize the inputs to match the question examples
-    data = np.asarray(data)
-
-    # flat array of the data values
-    data_flat = data.ravel()
-
-    # array of indices such that data_flat[indices] == data
-    indices = np.arange(data.size).reshape(data.shape)
-
-    # thanks to benjamin here
-    stretched_indices = np.maximum.accumulate(is_valid*indices, axis=axis)
-    return data_flat[stretched_indices]
-
-actual_oob = np.where(in_bounds, np.nan, data.actual)
-servo_oob = np.where(in_bounds, np.nan, data.servo)
-data.actual = stretch_over(data.actual, in_bounds)
-data.servo = stretch_over(data.servo, in_bounds)
 
 fig, axs = plt.subplots(3, sharex=True)
 fig.patch.set(alpha=0)
 fig.suptitle('Time-angle plots: {}'.format(fname))
 for i, ax in enumerate(axs):
-	ax.plot(data.t, np.degrees(data.target[:,i]), label='target')
-	l, = ax.plot(data.t, np.degrees(data.actual[:,i]), label='actual')
-	ax.plot(data.t, np.degrees(actual_oob[:,i]), color=l.get_color(), alpha=0.5)
-	l, = ax.plot(data.t, np.degrees(data.servo[:,i]), label='servo')
-	ax.plot(data.t, np.degrees(servo_oob[:,i]), color=l.get_color(), alpha=0.5)
-	l, = ax.plot(data.t, np.degrees(error[:,i]), label='displacement')
+	ax.plot(aug.t, np.degrees(aug.target[:,i]), label='target')
+	l, = ax.plot(aug.t, np.degrees(aug.actual[:,i]), label='actual')
+	ax.plot(aug.t, np.degrees(aug.actual_oob[:,i]), color=l.get_color(), alpha=0.5)
+	l, = ax.plot(aug.t, np.degrees(aug.servo[:,i]), label='servo')
+	ax.plot(aug.t, np.degrees(aug.servo_oob[:,i]), color=l.get_color(), alpha=0.5)
+	l, = ax.plot(aug.t, np.degrees(aug.error[:,i]), label='displacement')
 	ax.axhline(y=np.degrees(error_bounds[i,0]), color=l.get_color(), alpha=0.5)
 	ax.axhline(y=np.degrees(error_bounds[i,1]), color=l.get_color(), alpha=0.5)
 	ax.grid()
@@ -97,8 +80,8 @@ for i, ax in enumerate(axs):
 ax.legend()
 
 
-target_states = np.stack([State(target).joint_positions for target in data.target], axis=1)
-actual_states = np.stack([State(actual).joint_positions for actual in data.actual], axis=1)
+target_states = np.stack([State(target).joint_positions for target in aug.target], axis=1)
+actual_states = np.stack([State(actual).joint_positions for actual in aug.actual], axis=1)
 
 fig, ax = plt.subplots()
 fig.patch.set(alpha=0)
@@ -119,18 +102,18 @@ fig, axs = plt.subplots(3)
 fig.patch.set(alpha=0)
 fig.suptitle('Angle-force plots: {}'.format(fname))
 for i, ax in enumerate(axs):
-	# extract data, and smooth it
-	actual_i = data.actual[:,i]
-	error_i = error[:,i]
-	sm_actual_i = np.convolve(actual_i, filt)[N//2:][:len(actual_i)]
+	# extract aug, and smooth it
+	servo_i = aug.servo[:,i]
+	error_i = aug.error[:,i]
+	sm_servo_i = np.convolve(servo_i, filt)[N//2:][:len(servo_i)]
 	sm_error_i = np.convolve(error_i, filt)[N//2:][:len(error_i)]
 
 	# plot both
-	l, = ax.plot(np.degrees(actual_i), np.degrees(error_i), alpha=0.25)
-	l, = ax.plot(np.degrees(sm_actual_i), np.degrees(sm_error_i), color=l.get_color())
+	l, = ax.plot(np.degrees(servo_i), np.degrees(error_i), alpha=0.25)
+	l, = ax.plot(np.degrees(sm_servo_i), np.degrees(sm_error_i), color=l.get_color())
 	add_arrow(l, n=5)
 
 	ax.grid()
-	ax.set(xlabel='angle / degrees', ylabel='spring angle / degrees'.format(i+1))
+	ax.set(xlabel=r'$\phi_{}$ / degrees', ylabel='spring angle / degrees'.format(i+1))
 
 plt.show()
