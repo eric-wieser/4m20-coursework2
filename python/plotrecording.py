@@ -81,6 +81,7 @@ data.actual = stretch_over(data.actual, in_bounds)
 data.servo = stretch_over(data.servo, in_bounds)
 
 fig, axs = plt.subplots(3, sharex=True)
+fig.patch.set(alpha=0)
 fig.suptitle('Time-angle plots: {}'.format(fname))
 for i, ax in enumerate(axs):
 	ax.plot(data.t, np.degrees(data.target[:,i]), label='target')
@@ -100,6 +101,7 @@ target_states = np.stack([State(target).joint_positions for target in data.targe
 actual_states = np.stack([State(actual).joint_positions for actual in data.actual], axis=1)
 
 fig, ax = plt.subplots()
+fig.patch.set(alpha=0)
 fig.suptitle('Space-plots: {}'.format(fname))
 for targets, actuals in zip(target_states, actual_states):
 	l, = ax.plot(targets[:,0],targets[:,1], alpha=0.5, linewidth=3, label='target')
@@ -114,6 +116,7 @@ N = 11
 filt = np.ones(N) / N
 
 fig, axs = plt.subplots(3)
+fig.patch.set(alpha=0)
 fig.suptitle('Angle-force plots: {}'.format(fname))
 for i, ax in enumerate(axs):
 	# extract data, and smooth it
