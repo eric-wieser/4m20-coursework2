@@ -23,7 +23,7 @@ class SliderGui:
         # create the window
         root = tk.Tk()
         root.resizable(True, True)
-        root.minsize(800, 0)
+        root.geometry('400x450')
 
         self._pot_sliders = []
         self._root = root
@@ -56,19 +56,19 @@ class SliderGui:
         # add manual entry fields
         with frame(controls, text="Servo angles") as servo_fields:
             for v in vars:
-                e = tk.Entry(servo_fields, textvariable=v)
-                e.pack(fill=tk.BOTH, side=tk.LEFT)
+                e = ttk.Entry(servo_fields, textvariable=v, width=6)
+                e.pack(fill=tk.BOTH, side=tk.LEFT, padx=1, pady=1)
             # go button
             def button_pressed():
                 self._servo_values[:] = [v.get() for v in vars]
                 self._updated()
-            b = tk.Button(servo_fields, text='Go!', command=button_pressed)
+            b = ttk.Button(servo_fields, text='Go!', command=button_pressed)
             b.pack(fill=tk.BOTH, side=tk.LEFT)
 
 
         # position feedback toggle
         self.feedback_v = tk.IntVar()
-        feedback_button = tk.Checkbutton(controls, text="Use position feedback", variable=self.feedback_v,command=lambda : self._updated())
+        feedback_button = ttk.Checkbutton(controls, text="Use position feedback", variable=self.feedback_v,command=lambda : self._updated())
 
         # lay out the large components
         servo_fields.pack(padx=10, pady=10, side=tk.BOTTOM, expand=True)
