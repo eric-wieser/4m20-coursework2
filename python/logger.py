@@ -90,8 +90,6 @@ def augment(data):
     for name in basic_dtype.names:
         setattr(aug, name, getattr(data, name))
 
-    assert np.all(data.servo == aug.servo)
-
     aug.error = data.servo - data.actual
     error_bounds = config.error_active_lim
 

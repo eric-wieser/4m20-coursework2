@@ -103,7 +103,7 @@ fig.patch.set(alpha=0)
 fig.suptitle('Angle-force plots: {}'.format(fname))
 for i, ax in enumerate(axs):
 	# extract aug, and smooth it
-	servo_i = aug.actual[:,i]
+	actual_i = aug.actual[:,i]
 	error_i = aug.error[:,i]
 	sm_actual_i = np.convolve(actual_i, filt)[N//2:][:len(actual_i)]
 	sm_error_i = np.convolve(error_i, filt)[N//2:][:len(error_i)]
