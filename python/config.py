@@ -46,6 +46,7 @@ adc_active_lims = np.array([
 	(422, 619),
 	(460, 616)
 ])
+adc_passive_lims = np.array([(360, 680)] * 3)
 error_active_lim = (adc_active_lims - adc_0[:,np.newaxis]) * rad_per_adc
 
 # TODO: https://github.com/eric-wieser/4m20-coursework2/issues/12
@@ -58,9 +59,9 @@ masses = _total_mass * np.ones(4) / 4
 max_torque = 0.250 * lengths[0] * 9.81
 
 # Make everything read only!
-
-for arr in [servo_0, servo_per_radian, servo_angle_limits, adc_0, com, masses, lengths, error_active_lim]:
-	arr.setflags(write=False)
+for key, val in list(locals().items()):
+	if isinstance(val, np.ndarray):
+		val.setflags(write=False)
 
 if __name__ == '__main__':
 	print('Config')
