@@ -103,14 +103,14 @@ fig.patch.set(alpha=0)
 fig.suptitle('Angle-force plots: {}'.format(fname))
 for i, ax in enumerate(axs):
 	# extract aug, and smooth it
-	servo_i = aug.servo[:,i]
+	servo_i = aug.actual[:,i]
 	error_i = aug.error[:,i]
-	sm_servo_i = np.convolve(servo_i, filt)[N//2:][:len(servo_i)]
+	sm_actual_i = np.convolve(actual_i, filt)[N//2:][:len(actual_i)]
 	sm_error_i = np.convolve(error_i, filt)[N//2:][:len(error_i)]
 
 	# plot both
-	l, = ax.plot(np.degrees(servo_i), np.degrees(error_i), alpha=0.25)
-	l, = ax.plot(np.degrees(sm_servo_i), np.degrees(sm_error_i), color=l.get_color())
+	l, = ax.plot(np.degrees(actual_i), np.degrees(error_i), alpha=0.25)
+	l, = ax.plot(np.degrees(sm_actual_i), np.degrees(sm_error_i), color=l.get_color())
 	add_arrow(l, n=5)
 
 	ax.grid()
